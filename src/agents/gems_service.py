@@ -7,8 +7,9 @@ from dataclasses import dataclass
 from typing import Dict, Generator, Optional, Any, List, Tuple
 from langchain_ollama import ChatOllama
 
+from ..config import GEMConfig
 from .orchestrator import GEMOrchestrator
-from .gems import get_gem_info
+from .gems import get_gem_info, completion_patterns
 
 
 @dataclass
@@ -46,21 +47,27 @@ class GEMService:
             state_file: Arquivo para persistir estado da jornada
         """
         # Configuração otimizada do LLM para velocidade máxima
-        self.llm = llm or ChatOllama(
-            model="llama3.2:3b",
-            temperature=0.4,  # Mais determinístico = mais rápido
-            num_predict=350,  # Respostas concisas e rápidas
-            num_ctx=1536,  # Contexto reduzido para processar mais rápido
-            request_timeout=25.0,  # Timeout reduzido
-            num_thread=4,  # Otimiza uso de CPU
-        )
+        llm_config = GEMConfig.get_llm_config()
+        self.llm = llm or ChatOllama(**llm_config)
 
         self.orchestrator = GEMOrchestrator(state_file=state_file)
 
         # Histórico de mensagens por GEM durante a sessão
         self.gem_histories: Dict[str, List[Dict[str, str]]] = {}
 
-        self._force_completion_commands = {"/concluir", "/finalizar", "/finalize"}
+        # Dicionário de comandos e seus métodos correspondentes
+        self._command_registry = {
+            "/concluir": self._handle_completion_command,
+            "/finalizar": self._handle_completion_command, 
+            "/finalize": self._handle_completion_command,
+        }
+        
+        # Conjunto de comandos de força de conclusão para verificação rápida
+        self._force_completion_commands = set(self._command_registry.keys())
+
+    def _handle_completion_command(self, user_message: str) -> bool:
+        """Lida com o comando de conclusão forçada."""
+        return True  # Retorna True para indicar que é um comando de conclusão
 
     def process_message(self, user_message: str) -> GEMResponse:
         """
@@ -247,14 +254,21 @@ class GEMService:
 
     def _ensure_gem_history(self, gem_id: str, gem_info: Dict[str, str]) -> None:
         """Garante que o histórico do GEM esteja inicializado."""
-
+        
         if gem_id in self.gem_histories:
             return
 
-        self.gem_histories[gem_id] = []
-        shared_context = self.orchestrator.get_shared_context()
+        # Tenta carregar o histórico salvo do GEM, se existir
+        saved_conversations = self.orchestrator.state.get("gem_conversations", {})
+        if gem_id in saved_conversations and saved_conversations[gem_id]:
+            # Usa o histórico salvo do GEM
+            self.gem_histories[gem_id] = saved_conversations[gem_id].copy()
+        else:
+            # Inicializa novo histórico
+            self.gem_histories[gem_id] = []
+            shared_context = self.orchestrator.get_shared_context()
 
-        system_message = f"""Você é o {gem_info['name']} ({gem_info['emoji']}).
+            system_message = f"""Você é o {gem_info['name']} ({gem_info['emoji']}).
 
 {gem_info['instructions']}
 
@@ -269,10 +283,10 @@ IMPORTANTE:
 
 Comece se apresentando e iniciando o protocolo."""
 
-        self.gem_histories[gem_id].append({
-            "role": "system",
-            "content": system_message
-        })
+            self.gem_histories[gem_id].append({
+                "role": "system",
+                "content": system_message
+            })
 
     def _append_user_message(
         self,
@@ -352,7 +366,8 @@ Comece se apresentando e iniciando o protocolo."""
         if not user_message:
             return False
 
-        return user_message.strip().lower() in self._force_completion_commands
+        command = user_message.strip().lower()
+        return command in self._force_completion_commands
 
     def _stream_gem_interaction(
         self,
@@ -395,21 +410,41 @@ Comece se apresentando e iniciando o protocolo."""
 
         accumulated = ""
 
-        for chunk in self.llm.stream(messages):
-            text = self._extract_chunk_content(chunk)
-            if not text:
-                continue
+        try:
+            for chunk in self.llm.stream(messages):
+                text = self._extract_chunk_content(chunk)
+                if not text:
+                    continue
 
-            accumulated += text
+                accumulated += text
 
+                yield {
+                    "type": "chunk",
+                    "content": text,
+                    "accumulated": accumulated,
+                    "gem_id": gem_id,
+                    "gem_name": gem_info['name'],
+                    "is_orchestrator": False,
+                }
+        except Exception as stream_error:
+            # Handle errors that occur during streaming
+            # If we have accumulated content, send it as a chunk before the error
+            if accumulated:
+                yield {
+                    "type": "chunk",
+                    "content": accumulated,
+                    "accumulated": accumulated,
+                    "gem_id": gem_id,
+                    "gem_name": gem_info['name'],
+                    "is_orchestrator": False,
+                }
+            
+            # Send error event
             yield {
-                "type": "chunk",
-                "content": text,
-                "accumulated": accumulated,
-                "gem_id": gem_id,
-                "gem_name": gem_info['name'],
-                "is_orchestrator": False,
+                "type": "error",
+                "error": f"Erro durante o streaming: {str(stream_error)}",
             }
+            return
 
         answer = accumulated.strip()
 
@@ -457,9 +492,9 @@ Comece se apresentando e iniciando o protocolo."""
 
     def activate_gem(self, gem_id: str) -> str:
         """Ativa um GEM específico."""
-        # Limpa o histórico do GEM atual da memória, se houver
+        # Limpa o histórico do GEM atual da memória, se houver e for diferente do novo GEM
         current_gem = self.orchestrator.get_current_gem()
-        if current_gem and current_gem in self.gem_histories:
+        if current_gem and current_gem != gem_id and current_gem in self.gem_histories:
             del self.gem_histories[current_gem]
         
         # Ativa o novo GEM

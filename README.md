@@ -60,6 +60,12 @@ cd sistema-agentes-rag
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+# Para desenvolvimento e testes (opcional)
+pip install -r requirements-dev.txt
+
+# Para funcionalidades avançadas (opcional)
+pip install -r requirements-extra.txt
 ```
 
 ### 3. Execute a Interface Web
@@ -167,7 +173,9 @@ sistema-agentes-rag/
 ├── data/
 │   └── sac_gems_knowledge.txt   # Base de conhecimento
 ├── sac_gems.py                  # CLI interativo
-├── requirements.txt
+├── requirements.txt               # Dependências principais
+├── requirements-dev.txt           # Dependências de desenvolvimento
+├── requirements-extra.txt         # Dependências opcionais
 └── README.md                    # Este arquivo
 ```
 

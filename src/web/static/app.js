@@ -272,7 +272,7 @@ const handleStreamingResponse = async (message, options = {}) => {
                 <span class="${tagClass}">${tagText}</span>
               </div>
               ${displayMessage !== null ? `<p class="chat-message__question">${sanitize(displayMessage)}</p>` : ''}
-              <div class="chat-message__answer">${formattedAnswer}<span class="typing-cursor">▊</span></div>
+              <div class="chat-message__answer streaming">${formattedAnswer}<span class="typing-cursor">▊</span></div>
             `;
             scrollToBottom();
           } else if (data.type === 'done') {
@@ -287,6 +287,11 @@ const handleStreamingResponse = async (message, options = {}) => {
 
             // Replace container with the full message if displayMessage is not null, otherwise just update the sidebar
             if (displayMessage !== null) {
+              // Remove the streaming class before replacing
+              const answerElement = responseContainer.querySelector('.chat-message__answer');
+              if (answerElement) {
+                answerElement.classList.remove('streaming');
+              }
               responseContainer.replaceWith(buildMessage(normalized));
               scrollToBottom();
             } else {
@@ -314,6 +319,11 @@ const handleStreamingResponse = async (message, options = {}) => {
     };
     
     if (displayMessage !== null) {
+      // Remove the streaming class before replacing
+      const answerElement = responseContainer.querySelector('.chat-message__answer');
+      if (answerElement) {
+        answerElement.classList.remove('streaming');
+      }
       responseContainer.replaceWith(buildMessage(fallback));
     } else {
       // For commands that shouldn't be shown in chat, just update sidebar and remove loading indicator
@@ -643,6 +653,9 @@ const activateGem = async (gemId) => {
 
       // Atualiza a sidebar
       await updateGemsSidebar();
+      
+      // Carrega o histórico do GEM ativado
+      await loadHistory();
     } else {
       console.error('Erro ao ativar GEM:', data.error);
     }

@@ -507,6 +507,17 @@ body {
   }
 }
 
+/* Pulse animation for active streaming content */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+.chat-message__answer.streaming {
+  animation: pulse 1.5s infinite;
+}
+
 /* ===== GEMS SIDEBAR ===== */
 .gems-sidebar {
   position: fixed;
