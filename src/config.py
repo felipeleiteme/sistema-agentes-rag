@@ -9,7 +9,7 @@ class GEMConfig:
     """Configuração do sistema SAC Learning GEMS."""
     
     # Configurações do LLM
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.2:3b")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3.2:1b")  # Modelo mais rápido por padrão
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.6"))  # Aumentado para respostas mais rápidas
     LLM_NUM_PREDICT: int = int(os.getenv("LLM_NUM_PREDICT", "150"))  # Reduzido para respostas mais rápidas
     LLM_NUM_CTX: int = int(os.getenv("LLM_NUM_CTX", "1024"))         # Reduzido para processamento mais rápido
