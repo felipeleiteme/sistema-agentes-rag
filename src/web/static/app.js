@@ -8,6 +8,35 @@ const resetButton = document.querySelector("#reset-button");
 const themeToggle = document.querySelector("#theme-toggle");
 const completeButton = document.querySelector("#complete-button");
 
+// Function to update the visibility and state of the complete button based on current GEM
+const updateCompleteButton = async () => {
+  try {
+    const response = await fetch('/api/gems');
+    const data = await response.json();
+    
+    const currentGem = data.current_gem;
+    
+    if (completeButton) {
+      if (currentGem) {
+        // Show and enable the button if there's an active GEM
+        completeButton.style.display = 'block';
+        completeButton.disabled = false;
+      } else {
+        // Hide the button if no GEM is active
+        completeButton.style.display = 'none';
+        completeButton.disabled = true;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking GEM status:', error);
+    // In case of error, show the button to maintain functionality
+    if (completeButton) {
+      completeButton.style.display = 'block';
+      completeButton.disabled = false;
+    }
+  }
+};
+
 const formatGemLabel = (gemName, isOrchestrator) => {
   if (isOrchestrator) {
     return "Sistema";
@@ -242,22 +271,28 @@ const handleStreamingResponse = async (message, options = {}) => {
                 <span class="chat-message__role">${svgIcon}${gemLabel}</span>
                 <span class="${tagClass}">${tagText}</span>
               </div>
-              ${displayMessage ? `<p class="chat-message__question">${sanitize(displayMessage)}</p>` : ''}
+              ${displayMessage !== null ? `<p class="chat-message__question">${sanitize(displayMessage)}</p>` : ''}
               <div class="chat-message__answer">${formattedAnswer}<span class="typing-cursor">▊</span></div>
             `;
             scrollToBottom();
           } else if (data.type === 'done') {
             // Remove cursor de digitação e mostra resposta final
             const normalized = {
-              message: displayMessage,
+              message: displayMessage !== null ? displayMessage : '', // Use empty string if null
               answer: data.answer ?? "",
               gem_name: data.gem_name,
               is_orchestrator: data.is_orchestrator ?? false,
               error: data.error ? sanitize(data.error) : "",
             };
 
-            responseContainer.replaceWith(buildMessage(normalized));
-            scrollToBottom();
+            // Replace container with the full message if displayMessage is not null, otherwise just update the sidebar
+            if (displayMessage !== null) {
+              responseContainer.replaceWith(buildMessage(normalized));
+              scrollToBottom();
+            } else {
+              // For commands that shouldn't be shown in chat, just update sidebar and remove loading indicator
+              responseContainer.remove();
+            }
 
             // Atualiza sidebar se existir
             if (window.updateGemsSidebar) {
@@ -271,13 +306,20 @@ const handleStreamingResponse = async (message, options = {}) => {
     }
   } catch (error) {
     const fallback = {
-      message: displayMessage,
+      message: displayMessage !== null ? displayMessage : '', // Use empty string if null
       answer: "Não foi possível processar sua solicitação. Verifique se o Ollama está rodando.",
       gem_name: null,
       is_orchestrator: true,
       error: error instanceof Error ? sanitize(error.message) : "Erro desconhecido",
     };
-    responseContainer.replaceWith(buildMessage(fallback));
+    
+    if (displayMessage !== null) {
+      responseContainer.replaceWith(buildMessage(fallback));
+    } else {
+      // For commands that shouldn't be shown in chat, just update sidebar and remove loading indicator
+      responseContainer.remove();
+      console.error('Error processing command:', error);
+    }
   }
 };
 
@@ -290,11 +332,21 @@ const sendMessage = async (message, options = {}) => {
   isProcessing = true;
   setLoading(true);
 
+  // Disable complete button during processing
+  if (completeButton) {
+    completeButton.disabled = true;
+  }
+
   try {
     await handleStreamingResponse(trimmed, options);
   } finally {
     setLoading(false);
     isProcessing = false;
+
+    // Re-enable complete button after processing
+    if (completeButton) {
+      completeButton.disabled = false;
+    }
 
     if (!options.preserveTextarea) {
       textarea.value = "";
@@ -314,7 +366,7 @@ form.addEventListener("submit", async (event) => {
 if (completeButton) {
   completeButton.addEventListener('click', async () => {
     await sendMessage('/concluir', {
-      displayMessage: 'Concluir etapa atual',
+      displayMessage: null, // Don't show the command in chat
       preserveTextarea: true,
     });
   });
@@ -549,6 +601,9 @@ const updateGemsSidebar = async () => {
       });
     });
 
+    // Update the complete button after updating the sidebar
+    updateCompleteButton();
+    
     return data;
 
   } catch (error) {
@@ -602,11 +657,39 @@ window.updateGemsSidebar = updateGemsSidebar;
 // Inicializa a sidebar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   createGemsSidebar();
-  updateGemsSidebar().then(loadHistory);
+  updateGemsSidebar().then(loadHistory).then(updateCompleteButton);
 });
 
 // Cria o botão mobile
 createSidebarButton();
+
+// Update the complete button after loading history and when GEMs sidebar is updated
+window.updateGemsSidebar = async () => {
+  try {
+    const response = await fetch('/api/gems');
+    const data = await response.json();
+
+    const gemsList = document.getElementById('gems-list');
+    if (!gemsList) return;
+
+    window.gemsInfo = data;
+
+    // ... existing code for updating gems list ...
+    // (keeping the existing implementation of updateGemsSidebar)
+    
+    // After updating the sidebar, also update the complete button
+    updateCompleteButton();
+
+    return data;
+
+  } catch (error) {
+    console.error('Erro ao carregar GEMs:', error);
+    const gemsList = document.getElementById('gems-list');
+    if (gemsList) {
+      gemsList.innerHTML = '<div class="gems-sidebar__error">Erro ao carregar GEMs</div>';
+    }
+  }
+};
 
 // Adiciona botão para abrir sidebar (mobile)
 const createSidebarButton = () => {

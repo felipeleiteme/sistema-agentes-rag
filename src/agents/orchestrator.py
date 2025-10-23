@@ -7,6 +7,7 @@ from typing import Dict, Optional, List
 from datetime import datetime
 import json
 import os
+import shutil
 
 from .gems import (
     GEMS_INSTRUCTIONS,
@@ -186,6 +187,13 @@ Digite sua primeira mensagem para começar!
         """Retorna o ID do GEM atual."""
         return self.state.get("current_gem")
 
+    def activate_gem(self, gem_id: str) -> str:
+        """Ativa um GEM específico."""
+        self.state["current_gem"] = gem_id
+        self._save_state()
+        gem_info = get_gem_info(gem_id)
+        return f"Ativado: {gem_info['name']} ({gem_info['emoji']})"
+
     def complete_gem(self, gem_id: str, output: str) -> tuple[str, Optional[str]]:
         """
         Marca um GEM como completo e sugere o próximo.
@@ -354,6 +362,11 @@ Digite 'status' para revisar seu progresso
 
     def reset_journey(self) -> str:
         """Reinicia a jornada do usuário."""
+        # Create backup before resetting
+        if os.path.exists(self.state_file):
+            backup_path = f"{self.state_file}.backup"
+            shutil.copy2(self.state_file, backup_path)
+        
         self.state = {
             "current_gem": None,
             "completed_gems": [],

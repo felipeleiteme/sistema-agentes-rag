@@ -107,9 +107,8 @@ def create_app() -> FastAPI:
                 content={"error": "GEM não encontrado"}
             )
 
-        # Atualiza o GEM atual no orquestrador
-        service.orchestrator.current_gem = gem_id
-        service.orchestrator._save_state()
+        # Atualiza o GEM atual no serviço
+        service.activate_gem(gem_id)
 
         return JSONResponse(content={
             "message": f"Navegado para {gem_info['name']} {gem_info['emoji']}",

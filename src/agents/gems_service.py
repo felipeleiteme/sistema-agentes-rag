@@ -455,6 +455,16 @@ Comece se apresentando e iniciando o protocolo."""
         """Retorna status da jornada."""
         return self.orchestrator.get_current_status()
 
+    def activate_gem(self, gem_id: str) -> str:
+        """Ativa um GEM específico."""
+        # Limpa o histórico do GEM atual da memória, se houver
+        current_gem = self.orchestrator.get_current_gem()
+        if current_gem and current_gem in self.gem_histories:
+            del self.gem_histories[current_gem]
+        
+        # Ativa o novo GEM
+        return self.orchestrator.activate_gem(gem_id)
+
     def reset(self) -> str:
         """Reinicia a jornada."""
         # Limpa históricos

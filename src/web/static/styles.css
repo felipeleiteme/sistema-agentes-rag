@@ -377,6 +377,12 @@ body {
   background: var(--bg-input);
 }
 
+.complete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-secondary);
+}
+
 /* Theme Toggle Button */
 .theme-toggle {
   position: fixed;

@@ -82,6 +82,11 @@ A interface web oferece uma experiência moderna e intuitiva:
 - **Design Responsivo**: Funciona perfeitamente em mobile e desktop
 - **Tema Claro/Escuro**: Alterne entre temas com um clique
 - **Histórico Persistente**: Suas conversas são salvas localmente
+- **Exportação de Jornada**: Baixe todo o histórico em formato Markdown
+- **Carregamento de Histórico**: A interface restaura automaticamente as conversas anteriores
+- **Botão de Conclusão Rápida**: Finalize o GEM atual com um clique
+- **Botão de Cópia**: Copie respostas para a área de transferência
+- **Backup Automático**: Arquivo .backup criado durante reinicialização
 
 ### 🎨 Componentes da Interface
 
@@ -272,6 +277,12 @@ Retorna o status atual da jornada.
 
 ### POST /api/reset
 Reinicia a jornada do zero.
+
+### GET /api/history
+Retorna o histórico de conversas salvo para reconstruir o chat.
+
+### GET /api/export
+Exporta a jornada do usuário em formato Markdown.
 
 ## 🐛 Troubleshooting
 
