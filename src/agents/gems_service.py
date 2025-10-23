@@ -9,7 +9,7 @@ from langchain_ollama import ChatOllama
 
 from ..config import GEMConfig
 from .orchestrator import GEMOrchestrator
-from .gems import get_gem_info, completion_patterns
+from .gems import get_gem_info
 
 
 @dataclass
