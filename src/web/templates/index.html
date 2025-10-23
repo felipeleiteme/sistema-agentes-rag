@@ -1,42 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="chat-shell">
-  <div class="chat-history" id="chat-history">
-    <div class="chat-empty" id="empty-state">
-      <h2>Bem-vindo(a)!</h2>
-      <p>
-        Envie uma pergunta para iniciar uma conversa com nossos agentes. Questões sobre políticas de RH usarão a base de conhecimento especializada.
-      </p>
-      <ul>
-        <li>Fale com tom natural e objetivo.</li>
-        <li>Perguntas de RH recebem respostas fundamentadas na base interna.</li>
-        <li>Assuntos gerais usam o assistente rápido.</li>
-      </ul>
+<div class="container">
+  <div class="chat-wrapper">
+    <div class="chat-history" id="chat-history">
+      <div class="welcome" id="empty-state">
+        <div class="welcome__icon">💎</div>
+        <h1 class="welcome__title">SAC Learning GEMS</h1>
+        <p class="welcome__subtitle">Sistema de aprendizado com 7 agentes especializados</p>
+        <div class="welcome__actions">
+          <button class="btn btn--primary" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
+            Começar Jornada
+          </button>
+          <button class="btn btn--secondary" id="status-button">Ver Status</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-wrapper">
+      <form class="chat-form" id="chat-form">
+        <div class="input-container">
+          <textarea
+            class="input-field"
+            id="message"
+            name="message"
+            rows="1"
+            placeholder="Envie uma mensagem..."
+            required
+            autocomplete="off"
+          ></textarea>
+          <button class="send-button" type="submit" id="submit-button" aria-label="Enviar mensagem">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
-
-  <form class="chat-form" id="chat-form">
-    <label class="chat-form__label" for="question">Sua mensagem</label>
-    <div class="chat-form__controls">
-      <textarea
-        class="chat-form__input"
-        id="question"
-        name="question"
-        rows="3"
-        placeholder="Ex.: Qual é a política de férias para funcionários CLT?"
-        required
-        autocomplete="off"
-      ></textarea>
-      <button class="chat-form__submit" type="submit" id="submit-button">
-        <span>Enviar</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 12L21 3L14 12L21 21L3 12Z" />
-        </svg>
-      </button>
-    </div>
-    <p class="chat-form__hint">As respostas aparecem nesta mesma página e ficam salvas localmente durante a sessão.</p>
-  </form>
-</section>
+</div>
+<button class="reset-button" id="reset-button" title="Reiniciar jornada">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M3 12C3 7.029 7.029 3 12 3C16.971 3 21 7.029 21 12C21 16.971 16.971 21 12 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M3 12L6 9M3 12L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 <script src="{{ url_for('static', path='app.js') }}" type="module"></script>
 {% endblock %}

@@ -3,31 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hub de Agentes IA</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>SAC Learning GEMS</title>
     <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
   </head>
   <body>
-    <header class="app-header">
-      <div class="app-header__content">
-        <div>
-          <h1>Hub de Agentes IA</h1>
-          <p>Interaja com a equipe inteligente conectada à base da companhia.</p>
-        </div>
-        <div class="app-status" id="app-status">Pronto</div>
-      </div>
-    </header>
-    <main class="app-main" id="app">{% block content %}{% endblock %}</main>
-    <footer class="app-footer">
-      <p>
-        Sistema local utilizando LLM via Ollama e RAG customizado. Execute <code>uvicorn src.web.app:app --reload</code>
-        para iniciar.
-      </p>
-    </footer>
+    <main class="main">{% block content %}{% endblock %}</main>
   </body>
 </html>
