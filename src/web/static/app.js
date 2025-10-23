@@ -6,6 +6,7 @@ const emptyState = document.querySelector("#empty-state");
 const statusButton = document.querySelector("#status-button");
 const resetButton = document.querySelector("#reset-button");
 const themeToggle = document.querySelector("#theme-toggle");
+const completeButton = document.querySelector("#complete-button");
 
 const formatGemLabel = (gemName, isOrchestrator) => {
   if (isOrchestrator) {
@@ -41,6 +42,55 @@ const buildMessage = ({ message, answer, gem_name: gemName, is_orchestrator: isO
     <div class="chat-message__answer">${formattedAnswer}</div>
     ${error ? `<p class="chat-message__error">⚠️ ${error}</p>` : ""}
   `;
+
+  const answerElement = container.querySelector('.chat-message__answer');
+
+  if (answer && answerElement) {
+    const actions = document.createElement('div');
+    actions.className = 'chat-message__actions';
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'chat-message__copy';
+    copyButton.title = 'Copiar resposta';
+    copyButton.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M16 1H4C2.895 1 2 1.895 2 3V17H4V3H16V1Z" />
+        <path d="M19 5H8C6.895 5 6 5.895 6 7V21C6 22.105 6.895 23 8 23H19C20.105 23 21 22.105 21 21V7C21 5.895 20.105 5 19 5ZM8 21V7H19L19.002 21H8Z" />
+      </svg>
+      <span>Copiar</span>
+    `;
+
+    copyButton.addEventListener('click', async () => {
+      const text = answerElement.innerText.trim();
+      if (!text) return;
+
+      try {
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+          throw new Error('API de clipboard indisponível');
+        }
+
+        await navigator.clipboard.writeText(text);
+        copyButton.classList.add('chat-message__copy--success');
+        copyButton.querySelector('span').textContent = 'Copiado!';
+        setTimeout(() => {
+          copyButton.classList.remove('chat-message__copy--success');
+          copyButton.querySelector('span').textContent = 'Copiar';
+        }, 2000);
+      } catch (err) {
+        console.error('Não foi possível copiar o conteúdo:', err);
+        copyButton.classList.add('chat-message__copy--error');
+        copyButton.querySelector('span').textContent = 'Erro';
+        setTimeout(() => {
+          copyButton.classList.remove('chat-message__copy--error');
+          copyButton.querySelector('span').textContent = 'Copiar';
+        }, 2000);
+      }
+    });
+
+    actions.appendChild(copyButton);
+    container.appendChild(actions);
+  }
 
   return container;
 };
@@ -121,19 +171,12 @@ textarea.addEventListener('input', () => {
 });
 
 // Handler para streaming de resposta
-const handleStreamingResponse = async (message) => {
+const handleStreamingResponse = async (message, options = {}) => {
+  const displayMessage = typeof options.displayMessage === 'string' ? options.displayMessage : message;
+
   if (emptyState) {
     emptyState.remove();
   }
-
-  // Cria container para a mensagem do usuário
-  const userMessage = {
-    message: message,
-    answer: "",
-    gem_name: null,
-    is_orchestrator: false,
-    error: ""
-  };
 
   // Cria container de resposta vazio
   const responseContainer = document.createElement("article");
@@ -199,14 +242,14 @@ const handleStreamingResponse = async (message) => {
                 <span class="chat-message__role">${svgIcon}${gemLabel}</span>
                 <span class="${tagClass}">${tagText}</span>
               </div>
-              ${message ? `<p class="chat-message__question">${sanitize(message)}</p>` : ''}
+              ${displayMessage ? `<p class="chat-message__question">${sanitize(displayMessage)}</p>` : ''}
               <div class="chat-message__answer">${formattedAnswer}<span class="typing-cursor">▊</span></div>
             `;
             scrollToBottom();
           } else if (data.type === 'done') {
             // Remove cursor de digitação e mostra resposta final
             const normalized = {
-              message: message,
+              message: displayMessage,
               answer: data.answer ?? "",
               gem_name: data.gem_name,
               is_orchestrator: data.is_orchestrator ?? false,
@@ -228,7 +271,7 @@ const handleStreamingResponse = async (message) => {
     }
   } catch (error) {
     const fallback = {
-      message: message,
+      message: displayMessage,
       answer: "Não foi possível processar sua solicitação. Verifique se o Ollama está rodando.",
       gem_name: null,
       is_orchestrator: true,
@@ -238,13 +281,9 @@ const handleStreamingResponse = async (message) => {
   }
 };
 
-// Handler para o formulário principal
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const message = textarea.value.trim();
-
-  // Previne submissão se já estiver processando
-  if (!message || isProcessing) {
+const sendMessage = async (message, options = {}) => {
+  const trimmed = message.trim();
+  if (!trimmed || isProcessing) {
     return;
   }
 
@@ -252,15 +291,34 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
 
   try {
-    await handleStreamingResponse(message);
+    await handleStreamingResponse(trimmed, options);
   } finally {
     setLoading(false);
     isProcessing = false;
-    textarea.value = "";
-    textarea.style.height = 'auto';
+
+    if (!options.preserveTextarea) {
+      textarea.value = "";
+      textarea.style.height = 'auto';
+    }
+
     textarea.focus();
   }
+};
+
+// Handler para o formulário principal
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await sendMessage(textarea.value);
 });
+
+if (completeButton) {
+  completeButton.addEventListener('click', async () => {
+    await sendMessage('/concluir', {
+      displayMessage: 'Concluir etapa atual',
+      preserveTextarea: true,
+    });
+  });
+}
 
 // Handler para botão de status
 if (statusButton) {
@@ -399,6 +457,16 @@ const createGemsSidebar = () => {
     <div class="gems-sidebar__content" id="gems-list">
       <div class="gems-sidebar__loading">Carregando...</div>
     </div>
+    <div class="gems-sidebar__actions">
+      <button class="gems-sidebar__action" id="export-journey-button" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M5 19H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span>Exportar Jornada</span>
+      </button>
+    </div>
   `;
   document.body.appendChild(sidebar);
 
@@ -406,6 +474,11 @@ const createGemsSidebar = () => {
   const toggleBtn = document.getElementById('sidebar-toggle');
   toggleBtn?.addEventListener('click', () => {
     sidebar.classList.toggle('gems-sidebar--collapsed');
+  });
+
+  const exportButton = sidebar.querySelector('#export-journey-button');
+  exportButton?.addEventListener('click', () => {
+    window.open('/api/export', '_blank');
   });
 
   return sidebar;
@@ -416,6 +489,8 @@ const updateGemsSidebar = async () => {
   try {
     const response = await fetch('/api/gems');
     const data = await response.json();
+
+    window.gemsInfo = data;
 
     const gemsList = document.getElementById('gems-list');
     if (!gemsList) return;
@@ -474,6 +549,8 @@ const updateGemsSidebar = async () => {
       });
     });
 
+    return data;
+
   } catch (error) {
     console.error('Erro ao carregar GEMs:', error);
     const gemsList = document.getElementById('gems-list');
@@ -525,8 +602,11 @@ window.updateGemsSidebar = updateGemsSidebar;
 // Inicializa a sidebar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   createGemsSidebar();
-  updateGemsSidebar();
+  updateGemsSidebar().then(loadHistory);
 });
+
+// Cria o botão mobile
+createSidebarButton();
 
 // Adiciona botão para abrir sidebar (mobile)
 const createSidebarButton = () => {
@@ -547,5 +627,79 @@ const createSidebarButton = () => {
   });
 };
 
-// Cria o botão mobile
-createSidebarButton();
+let historyLoaded = false;
+
+const appendConversationHistory = (history, gemId) => {
+  if (!Array.isArray(history)) {
+    return;
+  }
+
+  const gemsMap = new Map();
+  if (window.gemsInfo?.gems) {
+    window.gemsInfo.gems.forEach((gem) => {
+      gemsMap.set(gem.id, gem);
+    });
+  }
+
+  let pendingUser = null;
+
+  history.forEach((entry) => {
+    if (!entry || !entry.role) {
+      return;
+    }
+
+    if (entry.role === 'user') {
+      pendingUser = entry.content || '';
+    } else if (entry.role === 'assistant') {
+      const gemInfo = gemsMap.get(gemId);
+      const payload = {
+        message: pendingUser || '',
+        answer: entry.content || '',
+        gem_name: gemInfo?.name || null,
+        is_orchestrator: false,
+        error: '',
+      };
+      chatHistory.appendChild(buildMessage(payload));
+      pendingUser = null;
+    }
+  });
+};
+
+const loadHistory = async () => {
+  if (historyLoaded) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/history');
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+    const { conversations, current_gem: currentGem, active_history: activeHistory, completed_gems: completedGems } = data;
+
+    if (completedGems && completedGems.length) {
+      completedGems.forEach((gemId) => {
+        appendConversationHistory(conversations?.[gemId], gemId);
+      });
+    }
+
+    if (currentGem && activeHistory) {
+      appendConversationHistory(activeHistory, currentGem);
+    }
+
+    if (chatHistory.children.length && emptyState) {
+      emptyState.remove();
+    }
+
+    if (chatHistory.children.length) {
+      scrollToBottom();
+    }
+
+    historyLoaded = true;
+
+  } catch (error) {
+    console.error('Erro ao carregar histórico:', error);
+  }
+};

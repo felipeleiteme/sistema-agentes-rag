@@ -1,9 +1,10 @@
 """Aplicação FastAPI para interação web com o sistema SAC Learning GEMS."""
 
-from functools import lru_cache
-from pathlib import Path
 import json
 import asyncio
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -13,6 +14,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel
 
 from ..agents import GEMService, GEMResponse
+from ..agents.gems import get_all_gems, get_gem_info
 
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
@@ -84,8 +86,6 @@ def create_app() -> FastAPI:
         service: GEMService = Depends(get_gem_service),
     ) -> JSONResponse:
         """Lista todos os GEMs disponíveis e o GEM atual."""
-        from ..agents.gems import get_all_gems
-
         all_gems = get_all_gems()
         current_gem = service.orchestrator.get_current_gem()
 
@@ -100,8 +100,6 @@ def create_app() -> FastAPI:
         service: GEMService = Depends(get_gem_service),
     ) -> JSONResponse:
         """Permite navegar livremente para qualquer GEM."""
-        from ..agents.gems import get_gem_info
-
         gem_info = get_gem_info(gem_id)
         if not gem_info:
             return JSONResponse(
@@ -137,47 +135,41 @@ def create_app() -> FastAPI:
 
         async def event_generator():
             try:
-                # Processa a mensagem de forma síncrona (por enquanto)
-                # Em uma implementação real, você precisaria fazer o streaming
-                # diretamente do LLM, mas isso requer modificações profundas
-
-                # Envia evento de início
                 yield f"data: {json.dumps({'type': 'start'})}\n\n"
-                await asyncio.sleep(0.1)
+                for chunk in service.process_message_stream(payload.message):
+                    event_type = chunk.get("type")
 
-                # Processa mensagem
-                gem_response: GEMResponse = service.process_message(payload.message)
+                    if event_type == "chunk":
+                        chunk_data = {
+                            "type": "chunk",
+                            "content": chunk.get("content", ""),
+                            "accumulated": chunk.get("accumulated", ""),
+                            "gem_id": chunk.get("gem_id"),
+                            "gem_name": chunk.get("gem_name"),
+                            "is_orchestrator": chunk.get("is_orchestrator", False)
+                        }
+                        yield f"data: {json.dumps(chunk_data)}\n\n"
 
-                # Simula streaming da resposta palavra por palavra para melhor UX
-                words = gem_response.answer.split()
-                accumulated = ""
+                    elif event_type == "done":
+                        final_data = {
+                            "type": "done",
+                            "message": payload.message,
+                            "answer": chunk.get("answer", ""),
+                            "gem_id": chunk.get("gem_id"),
+                            "gem_name": chunk.get("gem_name"),
+                            "is_orchestrator": chunk.get("is_orchestrator", False),
+                            "error": chunk.get("error")
+                        }
+                        yield f"data: {json.dumps(final_data)}\n\n"
 
-                for i, word in enumerate(words):
-                    accumulated += word + " "
-                    chunk_data = {
-                        "type": "chunk",
-                        "content": word + " ",
-                        "accumulated": accumulated.strip(),
-                        "gem_id": gem_response.gem_id,
-                        "gem_name": gem_response.gem_name,
-                        "is_orchestrator": gem_response.is_orchestrator
-                    }
-                    yield f"data: {json.dumps(chunk_data)}\n\n"
-                    # Delay adaptativo: mais rápido no início, mais lento depois
-                    delay = 0.03 if i < 10 else 0.02
-                    await asyncio.sleep(delay)
+                    elif event_type == "error":
+                        error_data = {
+                            "type": "error",
+                            "error": chunk.get("error", "Erro desconhecido")
+                        }
+                        yield f"data: {json.dumps(error_data)}\n\n"
 
-                # Envia evento de conclusão
-                final_data = {
-                    "type": "done",
-                    "message": payload.message,
-                    "answer": gem_response.answer,
-                    "gem_id": gem_response.gem_id,
-                    "gem_name": gem_response.gem_name,
-                    "is_orchestrator": gem_response.is_orchestrator,
-                    "error": gem_response.error
-                }
-                yield f"data: {json.dumps(final_data)}\n\n"
+                    await asyncio.sleep(0)
 
             except Exception as e:
                 error_data = {
@@ -193,6 +185,91 @@ def create_app() -> FastAPI:
                 "Cache-Control": "no-cache",
                 "X-Accel-Buffering": "no",
             }
+        )
+
+    @app.get("/api/history")
+    async def history_endpoint(
+        service: GEMService = Depends(get_gem_service),
+    ) -> JSONResponse:
+        """Retorna o histórico de conversas salvo para reconstruir o chat."""
+
+        state = service.orchestrator.state
+        current_gem = state.get("current_gem")
+        conversations = state.get("gem_conversations", {})
+        completed_gems = state.get("completed_gems", [])
+        active_history = None
+
+        if current_gem:
+            active_history = conversations.get(current_gem)
+            if not active_history:
+                active_history = service.gem_histories.get(current_gem)
+
+        payload = {
+            "current_gem": current_gem,
+            "conversations": conversations,
+            "active_history": active_history,
+            "completed_gems": completed_gems,
+        }
+
+        return JSONResponse(content=payload)
+
+    @app.get("/api/export")
+    async def export_endpoint(
+        service: GEMService = Depends(get_gem_service),
+    ) -> StreamingResponse:
+        """Exporta a jornada do usuário em formato Markdown."""
+
+        state = service.orchestrator.state
+        gem_outputs = state.get("gem_outputs", {})
+        gem_conversations = state.get("gem_conversations", {})
+        completed_gems = state.get("completed_gems", [])
+
+        lines = ["# Jornada SAC Learning GEMS", ""]
+
+        started_at = state.get("started_at")
+        if started_at:
+            lines.append(f"- Iniciada em: {started_at}")
+        lines.append(f"- Última atualização: {state.get('last_updated', 'não registrado')}")
+        lines.append("")
+
+        if completed_gems:
+            lines.append("## GEMs Completados")
+            lines.append("")
+
+        for gem_id in completed_gems:
+            gem_info = get_gem_info(gem_id) or {}
+            output = gem_outputs.get(gem_id, {}).get("output", "")
+
+            title = f"{gem_info.get('emoji', '')} {gem_info.get('name', gem_id)}".strip()
+            lines.append(f"### {title} ({gem_id})")
+            if output:
+                lines.append(f"- Output: {output}")
+            lines.append("")
+
+            history = gem_conversations.get(gem_id, [])
+            if history:
+                lines.append("#### Conversa")
+                for entry in history:
+                    role = entry.get("role", "")
+                    content = entry.get("content", "").replace("\r", "")
+                    lines.append(f"- **{role.capitalize()}**: {content}")
+                lines.append("")
+
+        if not completed_gems:
+            lines.append("Nenhum GEM foi completado ainda.")
+
+        content = "\n".join(lines)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"jornada-sac-learning-{timestamp}.md"
+
+        headers = {
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+
+        return StreamingResponse(
+            iter([content]),
+            media_type="text/markdown",
+            headers=headers,
         )
 
     return app
