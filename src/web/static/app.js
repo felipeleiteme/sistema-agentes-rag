@@ -5,6 +5,7 @@ const chatHistory = document.querySelector("#chat-history");
 const emptyState = document.querySelector("#empty-state");
 const statusButton = document.querySelector("#status-button");
 const resetButton = document.querySelector("#reset-button");
+const themeToggle = document.querySelector("#theme-toggle");
 
 const formatGemLabel = (gemName, isOrchestrator) => {
   if (isOrchestrator) {
@@ -119,6 +120,124 @@ textarea.addEventListener('input', () => {
   textarea.style.height = textarea.scrollHeight + 'px';
 });
 
+// Handler para streaming de resposta
+const handleStreamingResponse = async (message) => {
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+  // Cria container para a mensagem do usuário
+  const userMessage = {
+    message: message,
+    answer: "",
+    gem_name: null,
+    is_orchestrator: false,
+    error: ""
+  };
+
+  // Cria container de resposta vazio
+  const responseContainer = document.createElement("article");
+  responseContainer.className = "chat-message";
+  chatHistory.appendChild(responseContainer);
+
+  let accumulated = "";
+  let gemName = null;
+  let isOrchestrator = false;
+
+  try {
+    const response = await fetch("/api/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+
+          if (data.type === 'start') {
+            // Mostra indicador de digitação
+            responseContainer.innerHTML = `
+              <div class="loading-indicator">
+                <div class="loading-content">
+                  <div class="loading-spinner"></div>
+                  <span class="loading-text">Pensando...</span>
+                </div>
+              </div>
+            `;
+            scrollToBottom();
+          } else if (data.type === 'chunk') {
+            accumulated = data.accumulated;
+            gemName = data.gem_name;
+            isOrchestrator = data.is_orchestrator;
+
+            // Atualiza a resposta em tempo real
+            const gemLabel = formatGemLabel(gemName, isOrchestrator);
+            const tagClass = isOrchestrator ? "chat-message__tag chat-message__tag--system" : "chat-message__tag";
+            const tagText = isOrchestrator ? "Orquestrador" : gemName || "GEM";
+            const svgIcon = isOrchestrator
+              ? '<svg viewBox="0 0 24 24"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17V12L12 17L2 12V17Z"/></svg>'
+              : '<svg viewBox="0 0 24 24"><path d="M12 12C15.315 12 18 9.315 18 6C18 2.685 15.315 0 12 0C8.685 0 6 2.685 6 6C6 9.315 8.685 12 12 12ZM12 14.25C7.995 14.25 0 16.26 0 20.25V22.5H24V20.25C24 16.26 16.005 14.25 12 14.25Z"/></svg>';
+
+            const formattedAnswer = accumulated
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/`(.*?)`/g, '<code>$1</code>');
+
+            responseContainer.innerHTML = `
+              <div class="chat-message__meta">
+                <span class="chat-message__role">${svgIcon}${gemLabel}</span>
+                <span class="${tagClass}">${tagText}</span>
+              </div>
+              ${message ? `<p class="chat-message__question">${sanitize(message)}</p>` : ''}
+              <div class="chat-message__answer">${formattedAnswer}<span class="typing-cursor">▊</span></div>
+            `;
+            scrollToBottom();
+          } else if (data.type === 'done') {
+            // Remove cursor de digitação e mostra resposta final
+            const normalized = {
+              message: message,
+              answer: data.answer ?? "",
+              gem_name: data.gem_name,
+              is_orchestrator: data.is_orchestrator ?? false,
+              error: data.error ? sanitize(data.error) : "",
+            };
+
+            responseContainer.replaceWith(buildMessage(normalized));
+            scrollToBottom();
+
+            // Atualiza sidebar se existir
+            if (window.updateGemsSidebar) {
+              window.updateGemsSidebar();
+            }
+          } else if (data.type === 'error') {
+            throw new Error(data.error);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    const fallback = {
+      message: message,
+      answer: "Não foi possível processar sua solicitação. Verifique se o Ollama está rodando.",
+      gem_name: null,
+      is_orchestrator: true,
+      error: error instanceof Error ? sanitize(error.message) : "Erro desconhecido",
+    };
+    responseContainer.replaceWith(buildMessage(fallback));
+  }
+};
+
 // Handler para o formulário principal
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -133,41 +252,7 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
 
   try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-
-    const payload = await response.json();
-    const normalized = {
-      message: message,
-      answer: payload.answer ?? "",
-      gem_name: payload.gem_name,
-      is_orchestrator: payload.is_orchestrator ?? false,
-      error: payload.error ? sanitize(payload.error) : "",
-    };
-
-    if (emptyState) {
-      emptyState.remove();
-    }
-
-    const messageEl = buildMessage(normalized);
-    chatHistory.appendChild(messageEl);
-    scrollToBottom();
-
-  } catch (error) {
-    const fallback = {
-      message: message,
-      answer: "Não foi possível processar sua solicitação. Verifique se o Ollama está rodando.",
-      gem_name: null,
-      is_orchestrator: true,
-      error: error instanceof Error ? sanitize(error.message) : "Erro desconhecido",
-    };
-    if (emptyState) {
-      emptyState.remove();
-    }
-    chatHistory.appendChild(buildMessage(fallback));
+    await handleStreamingResponse(message);
   } finally {
     setLoading(false);
     isProcessing = false;
@@ -250,3 +335,217 @@ textarea.addEventListener('keydown', (e) => {
     form.requestSubmit();
   }
 });
+
+// Theme toggle functionality
+const applyTheme = (theme) => {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  localStorage.setItem('theme', theme);
+};
+
+const toggleTheme = () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  applyTheme(newTheme);
+};
+
+// Initialize theme from localStorage or system preference
+const initializeTheme = () => {
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  } else {
+    // Default to dark theme, but respect system preference
+    applyTheme(systemPrefersDark ? 'dark' : 'light');
+  }
+};
+
+// Add event listener for theme toggle button
+if (themeToggle) {
+  themeToggle.addEventListener('click', toggleTheme);
+}
+
+// Initialize theme on page load
+initializeTheme();
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  if (!localStorage.getItem('theme')) {
+    applyTheme(e.matches ? 'dark' : 'light');
+  }
+});
+
+// ===== GEMS SIDEBAR NAVIGATION =====
+
+// Cria a sidebar com todos os GEMs
+const createGemsSidebar = () => {
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'gems-sidebar';
+  sidebar.id = 'gems-sidebar';
+  sidebar.innerHTML = `
+    <div class="gems-sidebar__header">
+      <h3 class="gems-sidebar__title">GEMs Disponíveis</h3>
+      <button class="gems-sidebar__toggle" id="sidebar-toggle" aria-label="Alternar sidebar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="gems-sidebar__content" id="gems-list">
+      <div class="gems-sidebar__loading">Carregando...</div>
+    </div>
+  `;
+  document.body.appendChild(sidebar);
+
+  // Toggle button
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  toggleBtn?.addEventListener('click', () => {
+    sidebar.classList.toggle('gems-sidebar--collapsed');
+  });
+
+  return sidebar;
+};
+
+// Atualiza a lista de GEMs
+const updateGemsSidebar = async () => {
+  try {
+    const response = await fetch('/api/gems');
+    const data = await response.json();
+
+    const gemsList = document.getElementById('gems-list');
+    if (!gemsList) return;
+
+    // Calcula progresso (quantos GEMs já foram visitados/completados)
+    const currentIndex = data.gems.findIndex(g => g.id === data.current_gem);
+    const progress = currentIndex >= 0 ? ((currentIndex) / data.gems.length) * 100 : 0;
+
+    // Adiciona indicador de progresso
+    const progressHTML = `
+      <div class="gems-progress">
+        <div class="gems-progress__header">
+          <span class="gems-progress__label">Progresso da Jornada</span>
+          <span class="gems-progress__percentage">${Math.round(progress)}%</span>
+        </div>
+        <div class="gems-progress__bar">
+          <div class="gems-progress__fill" style="width: ${progress}%"></div>
+        </div>
+        <div class="gems-progress__info">
+          ${currentIndex >= 0 ? `GEM ${currentIndex + 1} de ${data.gems.length}` : 'Não iniciado'}
+        </div>
+      </div>
+    `;
+
+    const gemsHTML = data.gems.map((gem, index) => {
+      const isActive = gem.id === data.current_gem;
+      const isCompleted = index < currentIndex;
+      const activeClass = isActive ? 'gems-sidebar__item--active' : '';
+      const completedClass = isCompleted ? 'gems-sidebar__item--completed' : '';
+
+      return `
+        <button
+          class="gems-sidebar__item ${activeClass} ${completedClass}"
+          data-gem-id="${gem.id}"
+          title="${gem.specialty}"
+        >
+          <div class="gems-sidebar__item-number">${index + 1}</div>
+          <div class="gems-sidebar__item-emoji">${gem.emoji}</div>
+          <div class="gems-sidebar__item-info">
+            <div class="gems-sidebar__item-name">${gem.name}</div>
+            <div class="gems-sidebar__item-role">${gem.role}</div>
+          </div>
+          ${isActive ? '<div class="gems-sidebar__item-badge">Atual</div>' : ''}
+          ${isCompleted ? '<div class="gems-sidebar__item-check">✓</div>' : ''}
+        </button>
+      `;
+    }).join('');
+
+    gemsList.innerHTML = progressHTML + gemsHTML;
+
+    // Adiciona event listeners aos botões
+    gemsList.querySelectorAll('.gems-sidebar__item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const gemId = btn.dataset.gemId;
+        await activateGem(gemId);
+      });
+    });
+
+  } catch (error) {
+    console.error('Erro ao carregar GEMs:', error);
+    const gemsList = document.getElementById('gems-list');
+    if (gemsList) {
+      gemsList.innerHTML = '<div class="gems-sidebar__error">Erro ao carregar GEMs</div>';
+    }
+  }
+};
+
+// Ativa um GEM específico
+const activateGem = async (gemId) => {
+  try {
+    const response = await fetch(`/api/gems/${gemId}/activate`, {
+      method: 'POST',
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Mostra mensagem de confirmação
+      const confirmMessage = {
+        message: "",
+        answer: data.message,
+        gem_name: data.gem_name,
+        is_orchestrator: false,
+        error: "",
+      };
+
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      chatHistory.appendChild(buildMessage(confirmMessage));
+      scrollToBottom();
+
+      // Atualiza a sidebar
+      await updateGemsSidebar();
+    } else {
+      console.error('Erro ao ativar GEM:', data.error);
+    }
+  } catch (error) {
+    console.error('Erro ao ativar GEM:', error);
+  }
+};
+
+// Exporta função para ser usada em outros lugares
+window.updateGemsSidebar = updateGemsSidebar;
+
+// Inicializa a sidebar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+  createGemsSidebar();
+  updateGemsSidebar();
+});
+
+// Adiciona botão para abrir sidebar (mobile)
+const createSidebarButton = () => {
+  const btn = document.createElement('button');
+  btn.className = 'gems-sidebar-btn';
+  btn.id = 'open-sidebar-btn';
+  btn.title = 'Ver GEMs disponíveis';
+  btn.innerHTML = `
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  `;
+  document.body.appendChild(btn);
+
+  btn.addEventListener('click', () => {
+    const sidebar = document.getElementById('gems-sidebar');
+    sidebar?.classList.toggle('gems-sidebar--collapsed');
+  });
+};
+
+// Cria o botão mobile
+createSidebarButton();
