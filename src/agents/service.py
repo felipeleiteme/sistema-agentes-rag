@@ -1,11 +1,9 @@
-"""Serviço de roteamento de perguntas para os agentes."""
+"""Serviço de roteamento de perguntas para os agentes (LEGADO - Não usado mais)."""
 
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
 from langchain_ollama import ChatOllama
-
-from tools import buscar_conhecimento_rh
 
 
 @dataclass
@@ -25,7 +23,7 @@ class AgentService:
     def __init__(
         self,
         llm: Optional[ChatOllama] = None,
-        knowledge_tool=buscar_conhecimento_rh,
+        knowledge_tool=None,
         hr_keywords: Optional[Iterable[str]] = None,
     ) -> None:
         self.llm = llm or ChatOllama(
@@ -81,29 +79,12 @@ class AgentService:
             )
 
     def _handle_hr_question(self, question: str) -> AgentResponse:
-        """Processa perguntas relacionadas a RH utilizando a base de conhecimento."""
+        """Processa perguntas relacionadas a RH (DESABILITADO - Sistema antigo removido)."""
 
-        context = self.knowledge_tool._run(question)
-        if not context:
-            return AgentResponse(
-                answer="Não encontrei informações relevantes na base de conhecimento. Sugiro consultar o departamento de RH.",
-                agent="rh",
-                used_context=False,
-            )
-        context_segment = context[:500]
-        prompt = (
-            "Responda em no máximo duas frases usando apenas este contexto:\n\n"
-            f"{context_segment}\n\n"
-            f"Pergunta: {question}\n"
-            "Resposta curta:"
-        )
-        llm_output = self.llm.invoke(prompt)
-        answer = getattr(llm_output, "content", llm_output)
         return AgentResponse(
-            answer=str(answer).strip(),
+            answer="Sistema de RH antigo foi desabilitado. Use o SAC Learning GEMS.",
             agent="rh",
-            used_context=True,
-            context_preview=context_segment,
+            used_context=False,
         )
 
     def _handle_general_question(self, question: str) -> AgentResponse:

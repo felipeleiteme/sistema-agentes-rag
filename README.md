@@ -1,196 +1,312 @@
-# Sistema de Agentes com RAG - 100% Gratuito
+# SAC Learning GEMS 💎
 
-Sistema de agentes inteligentes usando **Ollama** (LLM local) + **LangChain** + **RAG** (Retrieval Augmented Generation) com embeddings TF-IDF customizados.
+**Sistema de Aprendizado Modular com 7 Agentes Especializados**
 
-## 🎯 Características
+Sistema revolucionário de 7 GEMs (agentes especializados) que transformam a curva de aprendizado através de **aprendizado interativo** guiado por inteligência artificial local.
 
-- ✅ **100% Gratuito** - Sem APIs pagas
-- ✅ **Local** - LLM Llama 3.2 (3B) via Ollama
-- ✅ **RAG** - Busca semântica em base de conhecimento
-- ✅ **Embeddings TF-IDF** - Sem dependência do PyTorch
-- ✅ **Multi-agentes** - Sistema inteligente de roteamento
-- ✅ **Interface Web Profissional** - Chat moderno com FastAPI + templates responsivos
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Python](https://img.shields.io/badge/python-3.11%2B-brightgreen.svg)
+![Ollama](https://img.shields.io/badge/ollama-llama3.2:3b-orange.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 🏗️ Arquitetura
+## 🌟 Características Principais
+
+- ✅ **100% Gratuito** - Sem APIs pagas, totalmente local
+- ✅ **7 GEMs Especializados** - Agentes independentes e autossuficientes
+- ✅ **Interface Web Moderna** - Chat interativo com streaming em tempo real
+- ✅ **Navegação Livre** - Explore qualquer GEM a qualquer momento
+- ✅ **Progresso Visual** - Acompanhe sua jornada com indicadores claros
+- ✅ **LLM Local** - Llama 3.2 (3B) via Ollama, privacidade total
+- ✅ **Performance Otimizada** - Respostas rápidas com streaming SSE
+
+## 🎯 O que são os GEMs?
+
+Os 7 GEMs são agentes especializados que trabalham em sequência para criar um sistema personalizado de aprendizado:
+
+| # | GEM | Função | Duração |
+|---|-----|--------|---------|
+| 1️⃣ | 🗺️ **Mestre do Mapeamento** | Mapeia seus papéis de vida (M.A.P.A.) | 45 min |
+| 2️⃣ | 🔍 **Diagnosticador F.O.C.O.** | Clarifica problemas (Fatos, Emoções, Contexto) | 20-40 min |
+| 3️⃣ | ⚖️ **Validador Estratégico** | Valida investimento de energia | 30 min |
+| 4️⃣ | 🔬 **Laboratório Científico** | Encontra métodos científicos validados | 30-45 min |
+| 5️⃣ | 🎓 **Tutor Socrático** | Certifica domínio ativo | 60 min |
+| 6️⃣ | 🏗️ **Arquiteto de Implementação** | Cria plano de implementação | 40 min |
+| 7️⃣ | 💎 **Construtor de Sistemas** | Constrói assistente IA personalizado (KBF) | 30 min |
+
+**Tempo total estimado:** 4-6 horas (distribuídas em vários dias)
+
+**Resultado final:** Um KBF (Knowledge-Based Fractal) - assistente IA que te conhece profundamente e adapta cada sugestão à sua realidade única.
+
+## 🚀 Instalação Rápida
+
+### 1. Pré-requisitos
+
+```bash
+# macOS
+brew install ollama
+brew services start ollama
+ollama pull llama3.2:3b
+
+# Linux
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.2:3b
+```
+
+### 2. Clone e Configure
+
+```bash
+git clone https://github.com/felipeleiteme/sistema-agentes-rag.git
+cd sistema-agentes-rag
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Execute a Interface Web
+
+```bash
+uvicorn src.web.app:app --reload
+```
+
+Acesse **`http://localhost:8000`** no navegador.
+
+## 📱 Interface Web
+
+A interface web oferece uma experiência moderna e intuitiva:
+
+### ✨ Principais Features
+
+- **Streaming em Tempo Real**: Veja as respostas aparecerem palavra por palavra
+- **Sidebar de Navegação**: Acesse qualquer GEM diretamente
+- **Progresso Visual**: Barra de progresso e indicadores de conclusão
+- **Design Responsivo**: Funciona perfeitamente em mobile e desktop
+- **Tema Claro/Escuro**: Alterne entre temas com um clique
+- **Histórico Persistente**: Suas conversas são salvas localmente
+
+### 🎨 Componentes da Interface
 
 ```
-Pergunta do Usuário
-       ↓
-Sistema Multi-Agente (Router)
-       ↓
-    ┌──────────────────┐
-    │  Pergunta de RH? │
-    └────┬─────────┬───┘
-         │         │
-      Sim│         │Não
-         ↓         ↓
-   Agente RH   Agente Geral
-       ↓
-  RAG Tool
-       ↓
-  FAISS Index
-  (TF-IDF)
-       ↓
-  Llama 3.2
-       ↓
-   Resposta
+┌─────────────────────────────────────────────┐
+│  [☰]  SAC Learning GEMS              [🌙]  │
+├──────────┬──────────────────────────────────┤
+│          │                                  │
+│  GEMs    │     Chat Principal              │
+│  ─────   │     ─────────────               │
+│          │                                  │
+│  ✓ GEM 1 │  [Streaming de Mensagens]       │
+│  → GEM 2 │  [Respostas em Tempo Real]      │
+│    GEM 3 │  [Histórico Completo]           │
+│    ...   │                                  │
+│          │                                  │
+│  ───────  │  ─────────────────────────────  │
+│  42%     │  [Digite sua mensagem...]  [↑]  │
+│  GEM 3/7 │                                  │
+└──────────┴──────────────────────────────────┘
+```
+
+## 🏗️ Arquitetura do Sistema
+
+```
+┌─────────────────────────────────────────────┐
+│           Interface Web (FastAPI)           │
+│  - Streaming SSE                            │
+│  - Navegação entre GEMs                     │
+│  - Gerenciamento de estado                  │
+└─────────────────┬───────────────────────────┘
+                  │
+        ┌─────────▼─────────┐
+        │   GEMService      │
+        │   - Processa msgs │
+        │   - Gerencia LLM  │
+        └─────────┬─────────┘
+                  │
+        ┌─────────▼──────────┐
+        │  GEMOrchestrator   │
+        │  - Controla fluxo  │
+        │  - Persiste estado │
+        └─────────┬──────────┘
+                  │
+    ┌─────────────┴─────────────┐
+    │                           │
+┌───▼────┐              ┌───────▼────┐
+│  GEMs  │              │ Ollama LLM │
+│  7     │◄─────────────┤ llama3.2:3b│
+└────────┘              └────────────┘
 ```
 
 ## 📂 Estrutura do Projeto
 
 ```
-meu_sistema_agentes/
-├── custom_embeddings.py    # Embeddings TF-IDF customizados
-├── tools.py                # Ferramenta RAG para busca
-├── ingest.py               # Script para criar índice FAISS
-├── chat_interativo.py      # Chat interativo (principal)
-├── simple_agent.py         # Sistema multi-agente completo
-├── test_agent.py           # Testes rápidos
-├── politica_rh.txt         # Base de conhecimento
-├── faiss_index/            # Índice vetorial FAISS
-└── README.md               # Este arquivo
+sistema-agentes-rag/
+├── src/
+│   ├── agents/
+│   │   ├── gems.py              # Definições dos 7 GEMs
+│   │   ├── orchestrator.py      # Orquestrador da jornada
+│   │   ├── gems_service.py      # Serviço principal dos GEMs
+│   │   └── __init__.py
+│   └── web/
+│       ├── app.py               # FastAPI app com endpoints
+│       ├── static/
+│       │   ├── app.js           # JavaScript (streaming, sidebar)
+│       │   └── styles.css       # Estilos modernos
+│       └── templates/
+│           ├── base.html
+│           └── index.html       # Interface principal
+├── docs/
+│   ├── SAC_GEMS_README.md       # Documentação completa dos GEMs
+│   ├── COMECE_AQUI.md           # Guia de início rápido
+│   ├── GUIA_RAPIDO_GEMS.md      # Resumo dos GEMs
+│   ├── MUDANCAS_v2.md           # Changelog da versão 2.0
+│   ├── OTIMIZACAO_PERFORMANCE.md # Otimizações implementadas
+│   └── CHANGELOG.md             # Histórico de mudanças
+├── data/
+│   └── sac_gems_knowledge.txt   # Base de conhecimento
+├── sac_gems.py                  # CLI interativo
+├── requirements.txt
+└── README.md                    # Este arquivo
 ```
 
-## 🚀 Instalação
+## 🎮 Como Usar
 
-### 1. Instale o Ollama
-
-```bash
-brew install ollama
-brew services start ollama
-ollama pull llama3.2:3b
-```
-
-### 2. Configure o ambiente Python
-
-```bash
-cd meu_sistema_agentes
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. Crie o índice FAISS
-
-```bash
-python3 ingest.py
-```
-
-### 4. Inicie a interface web
+### 1. Interface Web (Recomendado)
 
 ```bash
 uvicorn src.web.app:app --reload
 ```
 
-Acesse `http://localhost:8000` para utilizar o hub com visual profissional. Todas as requisições continuam sendo executadas localmente, reutilizando o mesmo roteamento de agentes.
+Abra `http://localhost:8000` e:
+1. Clique em **"Começar Jornada"**
+2. Interaja com o GEM atual
+3. Use a **sidebar** para navegar entre GEMs
+4. Acompanhe seu **progresso visual**
 
-## 🎯 Como Usar
-
-### Chat Interativo (Recomendado)
-
-```bash
-python3 chat_interativo.py
-```
-
-Faça perguntas sobre RH e receba respostas baseadas na base de conhecimento.
-
-### Sistema Multi-Agente Completo
+### 2. CLI Interativo
 
 ```bash
-python3 simple_agent.py             # modo interativo
-python3 simple_agent.py --question "Qual a política de home office?"
-python3 simple_agent.py --demo      # demonstração automática
+python3 sac_gems.py
 ```
 
-Use o modo interativo para fazer perguntas livremente, o parâmetro `--question` para rodadas únicas e `--demo` para ver os testes pré-configurados.
+Comandos disponíveis:
+- `iniciar` - Começa a jornada pelos GEMs
+- `status` - Mostra seu progresso atual
+- `listar` - Lista todos os GEMs disponíveis
+- `reiniciar` - Recomeça do zero
+- `sair` - Encerra o programa
 
-### Interface Web Profissional
+## 🔧 Configuração Avançada
 
-```bash
-uvicorn src.web.app:app --reload
-```
+### Ajustar Parâmetros do LLM
 
-- Interface moderna responsiva com histórico local de mensagens
-- Indicação visual de qual agente respondeu e se o RAG foi utilizado
-- Atualização dinâmica no navegador via JavaScript nativo
-
-### Teste Rápido
-
-```bash
-python3 test_agent.py
-```
-
-Testa a ferramenta RAG e o LLM separadamente.
-
-## 📝 Componentes
-
-### Custom Embeddings (`custom_embeddings.py`)
-
-Embeddings baseados em TF-IDF usando scikit-learn, evitando a dependência do PyTorch (incompatível com Python 3.13).
-
-### Ferramenta RAG (`tools.py`)
-
-Ferramenta de busca semântica que:
-1. Carrega o índice FAISS
-2. Busca os 3 documentos mais relevantes
-3. Retorna o contexto para o LLM
-
-### Sistema Multi-Agente (`simple_agent.py`)
-
-**Agente RH**: Usa RAG para responder perguntas sobre políticas de RH
-**Agente Geral**: Responde perguntas gerais sem ferramentas
-**Router**: Detecta automaticamente qual agente usar
-
-## ⚙️ Configuração
-
-### Adicionar novos documentos
-
-1. Adicione arquivos `.txt` na raiz do projeto
-2. Modifique `ingest.py` para carregar novos arquivos
-3. Execute `python3 ingest.py` para recriar o índice
-
-### Ajustar parâmetros do LLM
-
-Edite os arquivos Python e modifique:
+Edite `src/agents/gems_service.py`:
 
 ```python
-llm = ChatOllama(
+self.llm = ChatOllama(
     model="llama3.2:3b",
-    temperature=0.7  # Ajuste a criatividade (0.0-1.0)
+    temperature=0.4,      # Determinismo (0.0-1.0)
+    num_predict=350,      # Tamanho da resposta
+    num_ctx=1536,         # Tamanho do contexto
+    num_thread=4          # Threads para CPU
 )
 ```
 
-### Mudar número de documentos retornados
+### Mudar Modelo do Ollama
 
-Em `tools.py`:
+```bash
+# Modelos disponíveis
+ollama list
+
+# Usar modelo diferente
+ollama pull llama3.1:8b
+
+# Atualizar no código
+model="llama3.1:8b"
+```
+
+### Personalizar Streaming
+
+Ajuste o delay em `src/web/app.py`:
 
 ```python
-retriever = db.as_retriever(
-    search_type="similarity",
-    search_kwargs={"k": 3}  # Altere o número aqui
-)
+# Velocidade do streaming (segundos)
+delay = 0.03 if i < 10 else 0.02
 ```
+
+## 📊 Endpoints da API
+
+### GET /api/gems
+Lista todos os GEMs disponíveis e o GEM atual.
+
+**Resposta:**
+```json
+{
+  "gems": [...],
+  "current_gem": "gem2_diagnosticador_foco"
+}
+```
+
+### POST /api/chat
+Envia uma mensagem (resposta completa).
+
+**Request:**
+```json
+{
+  "message": "Olá, quero começar"
+}
+```
+
+### POST /api/chat/stream
+Envia uma mensagem com streaming SSE.
+
+**Stream Events:**
+```javascript
+data: {"type": "start"}
+data: {"type": "chunk", "content": "palavra ", ...}
+data: {"type": "done", "answer": "...", ...}
+```
+
+### POST /api/gems/{gem_id}/activate
+Ativa um GEM específico para navegação livre.
+
+### GET /api/status
+Retorna o status atual da jornada.
+
+### POST /api/reset
+Reinicia a jornada do zero.
 
 ## 🐛 Troubleshooting
 
 ### Ollama não está rodando
 
 ```bash
+# macOS
 brew services start ollama
-ollama list  # Deve mostrar llama3.2:3b
+
+# Linux
+sudo systemctl start ollama
+
+# Verificar
+ollama list
 ```
 
-### Índice FAISS não encontrado
+### Modelo não encontrado
 
 ```bash
-python3 ingest.py
+ollama pull llama3.2:3b
+```
+
+### Porta 8000 em uso
+
+```bash
+# Usar outra porta
+uvicorn src.web.app:app --reload --port 8001
 ```
 
 ### Respostas lentas
 
-- **Normal!** Modelo local 3B demora 10-15 segundos
-- Primeira execução é mais lenta (carrega o modelo)
+- **Normal para modelos locais!** (~10-15s)
+- Primeira execução carrega o modelo (mais lento)
 - Respostas subsequentes são mais rápidas
+- Use modelo menor para mais velocidade: `llama3.2:1b`
 
 ### Warning sobre PyTorch
 
@@ -198,45 +314,89 @@ python3 ingest.py
 None of PyTorch, TensorFlow >= 2.0, or Flax have been found.
 ```
 
-**Pode ignorar!** O sistema usa TF-IDF e não precisa de PyTorch.
+**Pode ignorar!** O sistema não usa PyTorch.
 
-## ✅ Testes e Validação
+## 📈 Performance
 
-Para instruções completas de teste e validação do sistema, consulte o **[Guia Completo de Testes](GUIA_TESTES.md)**.
+### Otimizações Implementadas
 
-### Testes Rápidos
+- ✅ Streaming SSE para feedback imediato
+- ✅ Contexto reduzido (1536 tokens) para processamento rápido
+- ✅ Respostas concisas (350 tokens max)
+- ✅ Cache de serviços com `@lru_cache`
+- ✅ Compressão GZIP para respostas HTTP
+- ✅ Delay adaptativo no streaming (mais rápido → mais lento)
 
-```bash
-# Demonstração automática
-python simple_agent.py --demo
+### Benchmarks
 
-# Testes automatizados
-pytest -v
+| Operação | Tempo Médio |
+|----------|-------------|
+| Primeira resposta | 12-15s |
+| Respostas subsequentes | 8-10s |
+| Streaming (primeira palavra) | ~100ms |
+| Carregamento da interface | <100ms |
+| Troca entre GEMs | <50ms |
 
-# Interface web
-uvicorn src.web.app:app --reload
-# Acesse: http://localhost:8000
-```
+## 🎓 Tecnologias Utilizadas
 
-Os testes cobrem a lógica de roteamento dos agentes e o endpoint FastAPI da interface web, garantindo a estabilidade do fluxo principal.
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| **Python** | 3.11+ | Linguagem base |
+| **FastAPI** | Latest | Framework web |
+| **LangChain** | Latest | Orquestração de LLM |
+| **Ollama** | Latest | Runtime LLM local |
+| **Llama 3.2** | 3B | Modelo de linguagem |
+| **JavaScript** | ES6+ | Frontend interativo |
+| **CSS3** | - | Estilização moderna |
 
-## 📊 Comparação com APIs Pagas
+## 📚 Documentação Adicional
 
-| Aspecto | Ollama Local | OpenAI API |
-|---------|-------------|------------|
-| Custo | $0 | ~$0.001/resp |
-| Velocidade | 10-15s | 1-2s |
-| Qualidade | Boa | Excelente |
-| Privacidade | 100% | Compartilhado |
+- **[SAC GEMS README](docs/SAC_GEMS_README.md)** - Documentação completa dos GEMs
+- **[Comece Aqui](docs/COMECE_AQUI.md)** - Guia de início rápido
+- **[Guia Rápido GEMS](docs/GUIA_RAPIDO_GEMS.md)** - Resumo dos 7 GEMs
+- **[Mudanças v2.0](docs/MUDANCAS_v2.md)** - O que há de novo
+- **[Otimização de Performance](docs/OTIMIZACAO_PERFORMANCE.md)** - Detalhes técnicos
+- **[Changelog](docs/CHANGELOG.md)** - Histórico completo
 
-## 🎓 Tecnologias
+## 🤝 Contribuindo
 
-- **LangChain**: Framework para LLMs
-- **Ollama**: Runtime para LLMs locais
-- **FAISS**: Vector database (Facebook AI)
-- **TF-IDF**: Embeddings (scikit-learn)
-- **Llama 3.2**: LLM da Meta (3B parâmetros)
+Contribuições são bem-vindas! Por favor:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Roadmap
+
+- [ ] Suporte para múltiplos usuários
+- [ ] Integração com banco de dados
+- [ ] Exportação de jornadas em PDF
+- [ ] Modo offline completo
+- [ ] App mobile (React Native)
+- [ ] Suporte para mais modelos LLM
+- [ ] Sistema de notificações
 
 ## 📄 Licença
 
-MIT
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## 🙏 Agradecimentos
+
+- Meta AI pelo Llama 3.2
+- Ollama pela infraestrutura local
+- LangChain pelo framework
+- Comunidade open source
+
+## 📧 Contato
+
+Felipe Leite - [@felipeleiteme](https://github.com/felipeleiteme)
+
+Link do Projeto: [https://github.com/felipeleiteme/sistema-agentes-rag](https://github.com/felipeleiteme/sistema-agentes-rag)
+
+---
+
+⭐ Se este projeto te ajudou, considere dar uma estrela!
+
+**Desenvolvido com ❤️ usando IA local**
