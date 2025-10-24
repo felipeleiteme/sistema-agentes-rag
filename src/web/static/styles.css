@@ -49,14 +49,16 @@ body {
 .main {
   flex: 1;
   display: flex;
-  justify-content: center;
   width: 100%;
   padding: 0;
 }
 
-.container {
+/* Override Bootstrap container-fluid to ensure 100% width */
+.container-fluid {
   width: 100%;
-  max-width: 48rem;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -215,13 +217,14 @@ body {
 .welcome__content {
   position: relative;
   z-index: 10;
-  max-width: 48rem;
+  max-width: 90rem;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3rem;
   text-align: center;
+  padding: 0 2rem;
 }
 
 /* Logo with glow */
@@ -284,7 +287,7 @@ body {
   font-size: 1.25rem;
   line-height: 1.6;
   color: var(--text-secondary);
-  max-width: 40rem;
+  max-width: 60rem;
 }
 
 /* Features badges */
@@ -293,7 +296,7 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-  max-width: 42rem;
+  max-width: 70rem;
 }
 
 .welcome__badge {
@@ -455,7 +458,7 @@ body {
   color: var(--text-primary);
   font-size: 0.9375rem;
   align-self: flex-end;
-  max-width: 80%;
+  max-width: 95%;
 }
 
 .chat-message__answer {
@@ -1362,8 +1365,8 @@ body:has(.gems-sidebar:not(.gems-sidebar--collapsed)) .container {
 }
 
 @media (max-width: 768px) {
-  .container {
-    max-width: 100%;
+  .container-fluid {
+    padding: 0;
   }
 
   .chat-history {
