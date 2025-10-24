@@ -13,9 +13,77 @@ const historySidebar = document.querySelector("#history-sidebar");
 const closeSidebar = document.querySelector("#close-sidebar");
 const newChatButton = document.querySelector("#new-chat-button");
 const historyList = document.querySelector("#history-list");
+const inputWrapper = document.getElementById('input-wrapper');
 
 // Current conversation ID
 let currentConversationId = null;
+
+let journeyStarted = false;
+
+const showInputWrapper = () => {
+  if (inputWrapper && !journeyStarted) {
+    inputWrapper.classList.remove('hidden');
+    journeyStarted = true;
+    textarea.focus();
+  }
+};
+
+const hideInputWrapper = () => {
+  if (inputWrapper) {
+    inputWrapper.classList.add('hidden');
+  }
+};
+
+const creativeAdjectives = [
+  'Aurora',
+  'Galáxia',
+  'Lótus',
+  'Horizonte',
+  'Orvalho',
+  'Brasa',
+  'Nébula',
+  'Quasar',
+  'Constelação',
+  'Eclipse',
+  'Ventura',
+  'Odisseia'
+];
+
+const creativeNouns = [
+  'das Ideias',
+  'do Conhecimento',
+  'da Jornada',
+  'do Infinito',
+  'da Imaginação',
+  'do Insight',
+  'da Inspiração',
+  'do Código',
+  'da Evolução',
+  'da Mudança',
+  'da Sabedoria',
+  'da Criatividade'
+];
+
+const generateCreativeTitle = (existingConversations = null) => {
+  const conversations = existingConversations || loadConversationsList();
+  const usedTitles = new Set(conversations.map((conversation) => conversation.title));
+
+  let attempts = 0;
+  let title = '';
+
+  do {
+    const adjective = creativeAdjectives[Math.floor(Math.random() * creativeAdjectives.length)];
+    const noun = creativeNouns[Math.floor(Math.random() * creativeNouns.length)];
+    title = `${adjective} ${noun}`;
+    attempts += 1;
+  } while (usedTitles.has(title) && attempts < 20);
+
+  if (usedTitles.has(title)) {
+    title = `${title} #${Math.floor(Math.random() * 999) + 1}`;
+  }
+
+  return title;
+};
 
 // Function to update the visibility and state of the complete button based on current GEM
 const updateCompleteButton = async () => {
@@ -454,11 +522,14 @@ const saveConversation = (conversationId, messages) => {
   const conversations = loadConversationsList();
   const existingIndex = conversations.findIndex(c => c.id === conversationId);
 
+  const existingTitle = existingIndex >= 0 ? conversations[existingIndex].title : null;
+  const conversationTitle = existingTitle || generateCreativeTitle(conversations);
+
   const conversationData = {
     id: conversationId,
     messages: messages,
     updatedAt: new Date().toISOString(),
-    title: messages.length > 0 ? messages[0].message.substring(0, 50) : 'Nova Conversa'
+    title: conversationTitle
   };
 
   if (existingIndex >= 0) {
@@ -467,6 +538,7 @@ const saveConversation = (conversationId, messages) => {
     conversations.unshift(conversationData);
   }
 
+  conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   localStorage.setItem('conversations', JSON.stringify(conversations));
   renderHistoryList();
 };
@@ -492,11 +564,32 @@ const loadConversation = (conversationId) => {
     currentConversationId = conversationId;
     chatHistory.innerHTML = '';
 
-    conversation.messages.forEach(msg => {
-      chatHistory.appendChild(buildMessage(msg));
-    });
+    if (conversation.messages.length === 0) {
+      if (emptyState) {
+        emptyState.style.display = 'flex';
+        chatHistory.appendChild(emptyState);
+      }
 
-    scrollToBottom();
+      hideInputWrapper();
+      journeyStarted = false;
+      textarea.value = '';
+      textarea.style.height = 'auto';
+    } else {
+      if (emptyState) {
+        emptyState.style.display = 'none';
+      }
+
+      conversation.messages.forEach(msg => {
+        chatHistory.appendChild(buildMessage(msg));
+      });
+
+      if (inputWrapper) {
+        inputWrapper.classList.remove('hidden');
+      }
+      journeyStarted = true;
+      scrollToBottom();
+    }
+
     renderHistoryList();
     toggleSidebar(false);
   }
@@ -504,15 +597,58 @@ const loadConversation = (conversationId) => {
 
 // Create new conversation
 const createNewConversation = () => {
-  currentConversationId = 'conv-' + Date.now();
+  const conversations = loadConversationsList();
+  const newConversationId = 'conv-' + Date.now();
+  const conversationTitle = generateCreativeTitle(conversations);
+
+  currentConversationId = newConversationId;
+
+  const newConversationData = {
+    id: newConversationId,
+    messages: [],
+    updatedAt: new Date().toISOString(),
+    title: conversationTitle
+  };
+
+  conversations.unshift(newConversationData);
+  conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  localStorage.setItem('conversations', JSON.stringify(conversations));
+
   chatHistory.innerHTML = '';
 
   if (emptyState) {
+    emptyState.style.display = 'flex';
     chatHistory.appendChild(emptyState);
   }
 
+  textarea.value = '';
+  textarea.style.height = 'auto';
+
+  hideInputWrapper();
+  journeyStarted = false;
+
   renderHistoryList();
   toggleSidebar(false);
+};
+
+const deleteConversation = (conversationId) => {
+  const conversations = loadConversationsList();
+  const filteredConversations = conversations.filter(conversation => conversation.id !== conversationId);
+
+  filteredConversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  localStorage.setItem('conversations', JSON.stringify(filteredConversations));
+
+  if (conversationId === currentConversationId) {
+    if (filteredConversations.length > 0) {
+      currentConversationId = filteredConversations[0].id;
+      loadConversation(currentConversationId);
+    } else {
+      currentConversationId = null;
+      createNewConversation();
+    }
+  } else {
+    renderHistoryList();
+  }
 };
 
 // Render history list
@@ -539,11 +675,24 @@ const renderHistoryList = () => {
 
     return `
       <div class="history-item ${isActive ? 'active' : ''}" data-conversation-id="${conv.id}">
-        <div class="history-item-title">${conv.title}</div>
-        <div class="history-item-meta">
-          <span>${formattedDate}</span>
-          <span>•</span>
-          <span>${formattedTime}</span>
+        <div class="history-item-header">
+          <div class="history-item-info">
+            <div class="history-item-title">${conv.title}</div>
+            <div class="history-item-meta">
+              <span>${formattedDate}</span>
+              <span>•</span>
+              <span>${formattedTime}</span>
+            </div>
+          </div>
+          <button class="history-item-delete" type="button" title="Excluir conversa" aria-label="Excluir conversa">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M8 6V4C8 2.895 8.895 2 10 2H14C15.105 2 16 2.895 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M19 6V20C19 21.105 18.105 22 17 22H7C5.895 22 5 21.105 5 20V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
         </div>
       </div>
     `;
@@ -551,9 +700,28 @@ const renderHistoryList = () => {
 
   // Add click handlers
   historyList.querySelectorAll('.history-item').forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (event) => {
+      if (event.target.closest('.history-item-delete')) {
+        return;
+      }
       const convId = item.getAttribute('data-conversation-id');
       loadConversation(convId);
+    });
+  });
+
+  historyList.querySelectorAll('.history-item-delete').forEach(button => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const parentItem = button.closest('.history-item');
+      const convId = parentItem?.getAttribute('data-conversation-id');
+      if (!convId) {
+        return;
+      }
+      const confirmed = window.confirm('Deseja realmente excluir esta conversa?');
+      if (!confirmed) {
+        return;
+      }
+      deleteConversation(convId);
     });
   });
 };
@@ -586,18 +754,19 @@ if (newChatButton) {
   newChatButton.addEventListener('click', createNewConversation);
 }
 
-// Initialize: Create first conversation if none exists
-if (!currentConversationId) {
+// Initialize conversations on load
+const initializeConversations = () => {
   const conversations = loadConversationsList();
+
   if (conversations.length > 0) {
     currentConversationId = conversations[0].id;
+    loadConversation(currentConversationId);
   } else {
-    currentConversationId = 'conv-' + Date.now();
+    createNewConversation();
   }
-}
+};
 
-// Render initial history list
-renderHistoryList();
+initializeConversations();
 
 // Auto-focus no textarea
 textarea.focus();
@@ -974,24 +1143,6 @@ const activateGem = async (gemId) => {
 // Exporta função para ser usada em outros lugares
 window.updateGemsSidebar = updateGemsSidebar;
 
-// Gerencia visibilidade do input wrapper
-const inputWrapper = document.getElementById('input-wrapper');
-let journeyStarted = false;
-
-const showInputWrapper = () => {
-  if (inputWrapper && !journeyStarted) {
-    inputWrapper.classList.remove('hidden');
-    journeyStarted = true;
-    textarea.focus();
-  }
-};
-
-const hideInputWrapper = () => {
-  if (inputWrapper) {
-    inputWrapper.classList.add('hidden');
-  }
-};
-
 // Inicializa a sidebar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   // Esconde input wrapper inicialmente
@@ -1133,3 +1284,40 @@ const loadHistory = async () => {
     console.error('Erro ao carregar histórico:', error);
   }
 };
+
+// ========================================
+// WELCOME SCREEN PARTICLES ANIMATION
+// ========================================
+
+const createParticles = () => {
+  const particlesContainer = document.getElementById('particles-container');
+  if (!particlesContainer) return;
+
+  const particleCount = 30;
+  
+  for (let i = 0; i < particleCount; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'welcome__particle';
+    
+    // Random positioning
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const size = Math.random() * 4 + 2;
+    const delay = Math.random() * 5;
+    const duration = Math.random() * 20 + 15;
+    
+    particle.style.left = `${x}%`;
+    particle.style.top = `${y}%`;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    particle.style.animationDelay = `${delay}s`;
+    particle.style.animationDuration = `${duration}s`;
+    
+    particlesContainer.appendChild(particle);
+  }
+};
+
+// Initialize particles when welcome screen is visible
+if (document.getElementById('empty-state')) {
+  createParticles();
+}

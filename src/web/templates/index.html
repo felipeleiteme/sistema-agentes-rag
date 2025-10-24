@@ -5,38 +5,48 @@
   <div class="chat-wrapper">
     <div class="chat-history" id="chat-history">
       <div class="welcome" id="empty-state">
-        <div class="welcome__icon">💎</div>
-        <h1 class="welcome__title">SAC Learning GEMS</h1>
-        <p class="welcome__subtitle">Sistema de aprendizado com 7 agentes especializados</p>
-
-        <div class="welcome__value-prop">
-          <p class="welcome__description">
-            Transforme sua forma de aprender através de uma jornada personalizada com 7 GEMs (agentes especializados) que trabalham em sequência para criar seu próprio assistente de IA.
-          </p>
-          <div class="welcome__benefits">
-            <div class="benefit">
-              <span class="benefit__icon">🗺️</span>
-              <span class="benefit__text">Mapeie seus objetivos de vida</span>
-            </div>
-            <div class="benefit">
-              <span class="benefit__icon">🎯</span>
-              <span class="benefit__text">Identifique desafios reais</span>
-            </div>
-            <div class="benefit">
-              <span class="benefit__icon">🔬</span>
-              <span class="benefit__text">Aprenda com ciência comprovada</span>
-            </div>
-            <div class="benefit">
-              <span class="benefit__icon">💎</span>
-              <span class="benefit__text">Construa seu assistente personalizado</span>
-            </div>
-          </div>
+        <!-- Animated background elements -->
+        <div class="welcome__bg">
+          <div class="welcome__blob welcome__blob--1"></div>
+          <div class="welcome__blob welcome__blob--2"></div>
+          <div class="welcome__blob welcome__blob--3"></div>
+          <div class="welcome__grid"></div>
+          <div class="welcome__particles" id="particles-container"></div>
         </div>
 
-        <div class="welcome__actions">
-          <button class="btn btn--primary btn--large" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
-            🚀 Começar Jornada
-          </button>
+        <!-- Main content -->
+        <div class="welcome__content">
+          <!-- Logo with glow effect -->
+          <div class="welcome__logo">
+            <div class="welcome__logo-glow"></div>
+            <div class="welcome__icon">💎</div>
+          </div>
+
+          <!-- Title section with gradient -->
+          <div class="welcome__header">
+            <h1 class="welcome__title">SAC Learning GEMS</h1>
+            <p class="welcome__subtitle">
+              Transforme sua forma de aprender através de uma jornada personalizada com 7 agentes especializados de IA
+            </p>
+          </div>
+
+          <!-- Features badges -->
+          <div class="welcome__features">
+            <div class="welcome__badge">Mapeie seus objetivos de vida</div>
+            <div class="welcome__badge">Identifique desafios reais</div>
+            <div class="welcome__badge">Aprenda com ciência comprovada</div>
+            <div class="welcome__badge">Construa seu assistente personalizado</div>
+          </div>
+
+          <!-- CTA Button -->
+          <div class="welcome__actions">
+            <button class="welcome__cta" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+              Começar Jornada
+            </button>
+          </div>
         </div>
       </div>
     </div>
