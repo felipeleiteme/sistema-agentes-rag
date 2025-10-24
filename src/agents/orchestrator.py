@@ -167,7 +167,7 @@ Digite 'listar' para ver todos os GEMs disponíveis
         message = f"""
 🚀 **JORNADA INICIADA!**
 
-Você está começando pelo primeiro GEM:
+Bem-vindo ao primeiro GEM da sua jornada de transformação:
 
 {gem_info['emoji']} **{gem_info['name']}**
 📋 {gem_info['role']}
@@ -175,10 +175,22 @@ Você está começando pelo primeiro GEM:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-O agente vai se apresentar e guiar você pelo processo.
-Cada GEM funciona de forma independente - não se preocupe com contextos anteriores.
+💬 **Como começar sua conversa:**
 
-Digite sua primeira mensagem para começar!
+O agente vai se apresentar de forma acolhedora e guiar você com perguntas claras durante todo o processo.
+
+✅ **Para iniciar, você pode simplesmente dizer:**
+   • "Olá" ou "Oi"
+   • "Estou pronto para começar"
+   • Ou começar direto contando sobre sua situação atual
+
+🎯 **Relaxe!** O agente vai te guiar passo a passo com empatia e clareza.
+Não existe resposta errada - apenas honestidade e abertura.
+
+📝 **Dica:** Cada GEM trabalha de forma independente, então não se preocupe
+    com o que foi dito antes. Foque apenas na conversa atual.
+
+Digite sua mensagem abaixo para começar! 👇
 """
 
         return message, GEMS_SEQUENCE[0]
