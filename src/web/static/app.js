@@ -126,8 +126,17 @@ const buildMessage = ({ message, answer, gem_name: gemName, is_orchestrator: isO
 
 // Estado de loading
 let loadingMessage = null;
-let loadingDots = 0;
 let loadingInterval = null;
+let loadingMessageIndex = 0;
+
+const loadingMessages = [
+  "Pensando na melhor resposta",
+  "Analisando informações",
+  "Organizando ideias",
+  "Conectando conceitos",
+  "Preparando resposta",
+  "Processando contexto"
+];
 
 const setLoading = (isLoading) => {
   submitButton.disabled = isLoading;
@@ -144,21 +153,22 @@ const setLoading = (isLoading) => {
       loadingMessage.innerHTML = `
         <div class="loading-content">
           <div class="loading-spinner"></div>
-          <span class="loading-text">Processando<span class="loading-dots"></span></span>
+          <span class="loading-text">${loadingMessages[0]}<span class="loading-dots">...</span></span>
         </div>
       `;
       chatHistory.appendChild(loadingMessage);
       scrollToBottom();
     }
 
-    // Anima os pontos
-    loadingDots = 0;
+    // Rotaciona as mensagens
+    loadingMessageIndex = 0;
     loadingInterval = setInterval(() => {
-      loadingDots = (loadingDots + 1) % 4;
-      const dots = '.'.repeat(loadingDots);
-      const dotsEl = loadingMessage?.querySelector('.loading-dots');
-      if (dotsEl) dotsEl.textContent = dots;
-    }, 500);
+      loadingMessageIndex = (loadingMessageIndex + 1) % loadingMessages.length;
+      const textEl = loadingMessage?.querySelector('.loading-text');
+      if (textEl) {
+        textEl.innerHTML = `${loadingMessages[loadingMessageIndex]}<span class="loading-dots">...</span>`;
+      }
+    }, 2000);
 
   } else {
     submitButton.classList.remove("loading");
@@ -353,6 +363,9 @@ const sendMessage = async (message, options = {}) => {
     return;
   }
 
+  // Mostra input wrapper se for o primeiro envio
+  showInputWrapper();
+
   isProcessing = true;
   setLoading(true);
 
@@ -396,35 +409,7 @@ if (completeButton) {
   });
 }
 
-// Handler para botão de status
-if (statusButton) {
-  statusButton.addEventListener("click", async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/status");
-      const payload = await response.json();
-
-      const statusMessage = {
-        message: "",
-        answer: payload.status,
-        gem_name: null,
-        is_orchestrator: true,
-        error: "",
-      };
-
-      if (emptyState) {
-        emptyState.remove();
-      }
-
-      chatHistory.appendChild(buildMessage(statusMessage));
-      scrollToBottom();
-    } catch (error) {
-      console.error("Erro ao buscar status:", error);
-    } finally {
-      setLoading(false);
-    }
-  });
-}
+// Botão de status removido (não mais necessário)
 
 // Handler para botão de reset
 if (resetButton) {
@@ -519,7 +504,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 // Cria a sidebar com todos os GEMs
 const createGemsSidebar = () => {
   const sidebar = document.createElement('aside');
-  sidebar.className = 'gems-sidebar';
+  sidebar.className = 'gems-sidebar gems-sidebar--collapsed'; // Inicia colapsada
   sidebar.id = 'gems-sidebar';
   sidebar.innerHTML = `
     <div class="gems-sidebar__header">
@@ -681,10 +666,37 @@ const activateGem = async (gemId) => {
 // Exporta função para ser usada em outros lugares
 window.updateGemsSidebar = updateGemsSidebar;
 
+// Gerencia visibilidade do input wrapper
+const inputWrapper = document.getElementById('input-wrapper');
+let journeyStarted = false;
+
+const showInputWrapper = () => {
+  if (inputWrapper && !journeyStarted) {
+    inputWrapper.classList.remove('hidden');
+    journeyStarted = true;
+    textarea.focus();
+  }
+};
+
+const hideInputWrapper = () => {
+  if (inputWrapper) {
+    inputWrapper.classList.add('hidden');
+  }
+};
+
 // Inicializa a sidebar quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
+  // Esconde input wrapper inicialmente
+  hideInputWrapper();
+
   createGemsSidebar();
-  updateGemsSidebar().then(loadHistory).then(updateCompleteButton);
+  updateGemsSidebar().then(loadHistory).then(() => {
+    updateCompleteButton();
+    // Se já tem histórico, mostra o input
+    if (chatHistory.children.length > 1) {
+      showInputWrapper();
+    }
+  });
 });
 
 // Cria o botão mobile

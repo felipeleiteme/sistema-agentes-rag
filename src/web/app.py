@@ -134,39 +134,39 @@ def create_app() -> FastAPI:
 
         async def event_generator():
             try:
-                yield f"data: {json.dumps({'type': 'start'})}\n\n"
+                yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
                 for chunk in service.process_message_stream(payload.message):
                     event_type = chunk.get("type")
 
                     if event_type == "chunk":
                         chunk_data = {
                             "type": "chunk",
-                            "content": chunk.get("content", ""),
-                            "accumulated": chunk.get("accumulated", ""),
+                            "content": str(chunk.get("content", "")),
+                            "accumulated": str(chunk.get("accumulated", "")),
                             "gem_id": chunk.get("gem_id"),
                             "gem_name": chunk.get("gem_name"),
                             "is_orchestrator": chunk.get("is_orchestrator", False)
                         }
-                        yield f"data: {json.dumps(chunk_data)}\n\n"
+                        yield f"data: {json.dumps(chunk_data, ensure_ascii=False)}\n\n"
 
                     elif event_type == "done":
                         final_data = {
                             "type": "done",
-                            "message": payload.message,
-                            "answer": chunk.get("answer", ""),
+                            "message": str(payload.message),
+                            "answer": str(chunk.get("answer", "")),
                             "gem_id": chunk.get("gem_id"),
                             "gem_name": chunk.get("gem_name"),
                             "is_orchestrator": chunk.get("is_orchestrator", False),
                             "error": chunk.get("error")
                         }
-                        yield f"data: {json.dumps(final_data)}\n\n"
+                        yield f"data: {json.dumps(final_data, ensure_ascii=False)}\n\n"
 
                     elif event_type == "error":
                         error_data = {
                             "type": "error",
-                            "error": chunk.get("error", "Erro desconhecido")
+                            "error": str(chunk.get("error", "Erro desconhecido"))
                         }
-                        yield f"data: {json.dumps(error_data)}\n\n"
+                        yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
 
                     await asyncio.sleep(0)
 
@@ -175,7 +175,7 @@ def create_app() -> FastAPI:
                     "type": "error",
                     "error": str(e)
                 }
-                yield f"data: {json.dumps(error_data)}\n\n"
+                yield f"data: {json.dumps(error_data, ensure_ascii=False)}\n\n"
 
         return StreamingResponse(
             event_generator(),

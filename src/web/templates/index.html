@@ -8,16 +8,40 @@
         <div class="welcome__icon">💎</div>
         <h1 class="welcome__title">SAC Learning GEMS</h1>
         <p class="welcome__subtitle">Sistema de aprendizado com 7 agentes especializados</p>
+
+        <div class="welcome__value-prop">
+          <p class="welcome__description">
+            Transforme sua forma de aprender através de uma jornada personalizada com 7 GEMs (agentes especializados) que trabalham em sequência para criar seu próprio assistente de IA.
+          </p>
+          <div class="welcome__benefits">
+            <div class="benefit">
+              <span class="benefit__icon">🗺️</span>
+              <span class="benefit__text">Mapeie seus objetivos de vida</span>
+            </div>
+            <div class="benefit">
+              <span class="benefit__icon">🎯</span>
+              <span class="benefit__text">Identifique desafios reais</span>
+            </div>
+            <div class="benefit">
+              <span class="benefit__icon">🔬</span>
+              <span class="benefit__text">Aprenda com ciência comprovada</span>
+            </div>
+            <div class="benefit">
+              <span class="benefit__icon">💎</span>
+              <span class="benefit__text">Construa seu assistente personalizado</span>
+            </div>
+          </div>
+        </div>
+
         <div class="welcome__actions">
-          <button class="btn btn--primary" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
-            Começar Jornada
+          <button class="btn btn--primary btn--large" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
+            🚀 Começar Jornada
           </button>
-          <button class="btn btn--secondary" id="status-button">Ver Status</button>
         </div>
       </div>
     </div>
 
-    <div class="input-wrapper">
+    <div class="input-wrapper" id="input-wrapper">
       <form class="chat-form" id="chat-form">
         <div class="input-container">
           <textarea
