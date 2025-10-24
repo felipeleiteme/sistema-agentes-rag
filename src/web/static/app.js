@@ -292,6 +292,7 @@ const handleStreamingResponse = async (message, options = {}) => {
 
   if (emptyState) {
     emptyState.remove();
+    chatHistory.classList.add('welcome-removed');
   }
 
   // Cria container de resposta vazio
@@ -1122,6 +1123,7 @@ const activateGem = async (gemId) => {
 
       if (emptyState) {
         emptyState.remove();
+        chatHistory.classList.add('welcome-removed');
       }
 
       chatHistory.appendChild(buildMessage(confirmMessage));
@@ -1272,6 +1274,7 @@ const loadHistory = async () => {
 
     if (chatHistory.children.length && emptyState) {
       emptyState.remove();
+      chatHistory.classList.add('welcome-removed');
     }
 
     if (chatHistory.children.length) {

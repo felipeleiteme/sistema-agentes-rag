@@ -5,7 +5,7 @@
   <div class="chat-wrapper">
     <div class="chat-history" id="chat-history">
       <div class="welcome" id="empty-state">
-        <!-- Animated background elements -->
+        <!-- Animated background elements (full width) -->
         <div class="welcome__bg">
           <div class="welcome__blob welcome__blob--1"></div>
           <div class="welcome__blob welcome__blob--2"></div>
@@ -14,62 +14,66 @@
           <div class="welcome__particles" id="particles-container"></div>
         </div>
 
-        <!-- Main content -->
-        <div class="welcome__content">
-          <!-- Logo with glow effect -->
-          <div class="welcome__logo">
-            <div class="welcome__logo-glow"></div>
-            <div class="welcome__icon">💎</div>
-          </div>
+        <!-- Main content constrained to 964px -->
+        <div class="container">
+          <div class="welcome__content">
+            <!-- Logo with glow effect -->
+            <div class="welcome__logo">
+              <div class="welcome__logo-glow"></div>
+              <div class="welcome__icon">💎</div>
+            </div>
 
-          <!-- Title section with gradient -->
-          <div class="welcome__header">
-            <h1 class="welcome__title">SAC Learning GEMS</h1>
-            <p class="welcome__subtitle">
-              Transforme sua forma de aprender através de uma jornada personalizada com 7 agentes especializados de IA
-            </p>
-          </div>
+            <!-- Title section with gradient -->
+            <div class="welcome__header">
+              <h1 class="welcome__title">SAC Learning GEMS</h1>
+              <p class="welcome__subtitle">
+                Transforme sua forma de aprender através de uma jornada personalizada com 7 agentes especializados de IA
+              </p>
+            </div>
 
-          <!-- Features badges -->
-          <div class="welcome__features">
-            <div class="welcome__badge">Mapeie seus objetivos de vida</div>
-            <div class="welcome__badge">Identifique desafios reais</div>
-            <div class="welcome__badge">Aprenda com ciência comprovada</div>
-            <div class="welcome__badge">Construa seu assistente personalizado</div>
-          </div>
+            <!-- Features badges -->
+            <div class="welcome__features">
+              <div class="welcome__badge">Mapeie seus objetivos de vida</div>
+              <div class="welcome__badge">Identifique desafios reais</div>
+              <div class="welcome__badge">Aprenda com ciência comprovada</div>
+              <div class="welcome__badge">Construa seu assistente personalizado</div>
+            </div>
 
-          <!-- CTA Button -->
-          <div class="welcome__actions">
-            <button class="welcome__cta" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-              Começar Jornada
-            </button>
+            <!-- CTA Button -->
+            <div class="welcome__actions">
+              <button class="welcome__cta" onclick="document.getElementById('message').value='iniciar'; document.getElementById('chat-form').requestSubmit();">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Começar Jornada
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="input-wrapper" id="input-wrapper">
-      <form class="chat-form" id="chat-form">
-        <div class="input-container">
-          <textarea
-            class="input-field"
-            id="message"
-            name="message"
-            rows="1"
-            placeholder="Envie uma mensagem..."
-            required
-            autocomplete="off"
-          ></textarea>
-          <button class="send-button" type="submit" id="submit-button" aria-label="Enviar mensagem">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-      </form>
+    <div class="container">
+      <div class="input-wrapper" id="input-wrapper">
+        <form class="chat-form" id="chat-form">
+          <div class="input-container">
+            <textarea
+              class="input-field"
+              id="message"
+              name="message"
+              rows="1"
+              placeholder="Envie uma mensagem..."
+              required
+              autocomplete="off"
+            ></textarea>
+            <button class="send-button" type="submit" id="submit-button" aria-label="Enviar mensagem">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
