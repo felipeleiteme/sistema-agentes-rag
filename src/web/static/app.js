@@ -225,6 +225,7 @@ const handleStreamingResponse = async (message, options = {}) => {
   let accumulated = "";
   let gemName = null;
   let isOrchestrator = false;
+  let buffer = ""; // Buffer para acumular chunks incompletos
 
   try {
     const response = await fetch("/api/chat/stream", {
@@ -241,11 +242,18 @@ const handleStreamingResponse = async (message, options = {}) => {
       if (done) break;
 
       const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
+      buffer += chunk;
+      const lines = buffer.split('\n');
+
+      // Mantém a última linha no buffer se não terminar com \n
+      buffer = lines.pop() || "";
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const data = JSON.parse(line.slice(6));
+          try {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue; // Ignora linhas vazias
+            const data = JSON.parse(jsonStr);
 
           if (data.type === 'start') {
             // Mostra indicador de digitação
@@ -317,6 +325,10 @@ const handleStreamingResponse = async (message, options = {}) => {
             }
           } else if (data.type === 'error') {
             throw new Error(data.error);
+          }
+          } catch (parseError) {
+            // Ignora erros de parsing de JSON incompleto
+            console.warn('Erro ao fazer parse de linha SSE:', line, parseError);
           }
         }
       }
