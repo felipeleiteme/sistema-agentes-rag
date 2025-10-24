@@ -501,8 +501,161 @@ if (themeToggle) {
   themeToggle.addEventListener('click', toggleTheme);
 }
 
+// ===== HISTORY RESTORATION =====
+
+// Função para restaurar histórico de conversas
+const restoreHistory = async () => {
+  try {
+    const response = await fetch('/api/history');
+    const data = await response.json();
+
+    const { current_gem, active_history, completed_gems } = data;
+
+    // Se não há GEM ativo e nem histórico, não precisa restaurar
+    if (!current_gem && (!completed_gems || completed_gems.length === 0)) {
+      return;
+    }
+
+    // Se há histórico, mostrar opção de continuar ou resetar
+    if (active_history && active_history.length > 0) {
+      const shouldRestore = await showRestoreDialog();
+
+      if (shouldRestore) {
+        // Oculta welcome screen
+        if (emptyState) {
+          emptyState.style.display = 'none';
+        }
+
+        // Mostra input wrapper
+        showInputWrapper();
+
+        // Restaura as mensagens do histórico
+        for (const msg of active_history) {
+          if (msg.role === 'user') {
+            // Mensagem do usuário (não mostramos separadamente no nosso UI)
+            continue;
+          } else if (msg.role === 'assistant') {
+            const messageData = {
+              message: '', // Não mostramos a pergunta separadamente
+              answer: msg.content,
+              gem_name: current_gem ? getGemNameFromId(current_gem) : null,
+              is_orchestrator: false,
+              error: ''
+            };
+            chatHistory.appendChild(buildMessage(messageData));
+          } else if (msg.role === 'system') {
+            // System messages são as instruções, não mostramos no chat
+            continue;
+          }
+        }
+
+        scrollToBottom();
+
+        // Atualiza sidebar
+        if (window.updateGemsSidebar) {
+          window.updateGemsSidebar();
+        }
+      } else {
+        // Usuário escolheu resetar
+        await resetJourney();
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao restaurar histórico:', error);
+    // Se der erro, apenas continua normalmente
+  }
+};
+
+// Função auxiliar para obter nome do GEM pelo ID
+const getGemNameFromId = (gemId) => {
+  const gemNames = {
+    'gem1_mestre_mapeamento': 'Mestre do Mapeamento',
+    'gem2_diagnosticador_foco': 'Diagnosticador F.O.C.O.',
+    'gem3_validador_estrategico': 'Validador Estratégico',
+    'gem4_laboratorio_cientifico': 'Laboratório Científico',
+    'gem5_tutor_socratico': 'Tutor Socrático',
+    'gem6_arquiteto_implementacao': 'Arquiteto de Implementação',
+    'gem7_construtor_sistemas': 'Construtor de Sistemas'
+  };
+  return gemNames[gemId] || 'GEM';
+};
+
+// Mostra dialog para escolher entre continuar ou resetar
+const showRestoreDialog = () => {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('div');
+    dialog.className = 'restore-dialog';
+    dialog.innerHTML = `
+      <div class="restore-dialog__overlay"></div>
+      <div class="restore-dialog__content">
+        <h2 class="restore-dialog__title">💎 Bem-vindo de volta!</h2>
+        <p class="restore-dialog__message">
+          Encontramos uma conversa anterior em andamento.
+          Deseja continuar de onde parou ou começar uma nova jornada?
+        </p>
+        <div class="restore-dialog__actions">
+          <button class="btn btn--secondary" id="restore-reset">
+            🔄 Começar do Zero
+          </button>
+          <button class="btn btn--primary" id="restore-continue">
+            ▶️ Continuar
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const continueBtn = dialog.querySelector('#restore-continue');
+    const resetBtn = dialog.querySelector('#restore-reset');
+
+    const cleanup = () => {
+      dialog.remove();
+    };
+
+    continueBtn.addEventListener('click', () => {
+      cleanup();
+      resolve(true);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      cleanup();
+      resolve(false);
+    });
+  });
+};
+
+// Função para resetar jornada
+const resetJourney = async () => {
+  try {
+    const response = await fetch("/api/reset", { method: "POST" });
+    const payload = await response.json();
+
+    // Limpa o histórico visual
+    chatHistory.innerHTML = '';
+
+    // Mostra welcome screen novamente
+    if (emptyState) {
+      emptyState.style.display = 'flex';
+    }
+
+    // Esconde input wrapper
+    hideInputWrapper();
+
+    // Atualiza sidebar
+    if (window.updateGemsSidebar) {
+      window.updateGemsSidebar();
+    }
+  } catch (error) {
+    console.error("Erro ao resetar:", error);
+  }
+};
+
 // Initialize theme on page load
 initializeTheme();
+
+// Restaura histórico ao carregar a página
+restoreHistory();
 
 // Listen for system theme changes
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
