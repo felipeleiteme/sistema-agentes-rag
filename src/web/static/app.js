@@ -292,6 +292,8 @@ const handleStreamingResponse = async (message, options = {}) => {
               if (answerElement) {
                 answerElement.classList.remove('streaming');
               }
+              // Adiciona animação de conclusão
+              responseContainer.style.transition = 'all 0.3s ease-out';
               responseContainer.replaceWith(buildMessage(normalized));
               scrollToBottom();
             } else {
@@ -310,14 +312,26 @@ const handleStreamingResponse = async (message, options = {}) => {
       }
     }
   } catch (error) {
+    console.error('Erro no streaming:', error);
+
+    // Determina a mensagem de erro apropriada
+    let errorMessage = "Não foi possível processar sua solicitação.";
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      errorMessage = "Erro de conexão. Verifique se o servidor está rodando.";
+    } else if (error.message.includes('timeout')) {
+      errorMessage = "A requisição demorou muito. Tente novamente.";
+    } else if (error.message.includes('Ollama')) {
+      errorMessage = "Erro ao conectar com o Ollama. Verifique se está rodando (ollama serve).";
+    }
+
     const fallback = {
       message: displayMessage !== null ? displayMessage : '', // Use empty string if null
-      answer: "Não foi possível processar sua solicitação. Verifique se o Ollama está rodando.",
+      answer: errorMessage,
       gem_name: null,
       is_orchestrator: true,
       error: error instanceof Error ? sanitize(error.message) : "Erro desconhecido",
     };
-    
+
     if (displayMessage !== null) {
       // Remove the streaming class before replacing
       const answerElement = responseContainer.querySelector('.chat-message__answer');

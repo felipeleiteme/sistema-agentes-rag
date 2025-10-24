@@ -332,6 +332,12 @@ Comece se apresentando e iniciando o protocolo."""
 
         output = self._extract_gem_output(answer, gem_id)
 
+        # Completa o GEM e obtém mensagem de conclusão
+        completion_msg, _ = self.orchestrator.complete_gem(
+            gem_id,
+            output
+        )
+
         # Atualiza última resposta com eventual mensagem final
         final_answer = f"{answer}\n\n{completion_msg}".strip()
 
@@ -339,12 +345,6 @@ Comece se apresentando e iniciando o protocolo."""
             self.gem_histories[gem_id][-1]["content"] = final_answer
 
         self.orchestrator.save_gem_conversation(gem_id, self.gem_histories[gem_id])
-        self.orchestrator.update_shared_context(gem_id, output)
-
-        completion_msg, _ = self.orchestrator.complete_gem(
-            gem_id,
-            output
-        )
 
         if gem_id in self.gem_histories:
             del self.gem_histories[gem_id]
