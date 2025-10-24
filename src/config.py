@@ -3,6 +3,10 @@ Configuração do sistema SAC Learning GEMS
 """
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Carrega variáveis de ambiente do arquivo .env
+load_dotenv()
 
 
 class GEMConfig:
