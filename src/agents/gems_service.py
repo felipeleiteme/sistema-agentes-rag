@@ -219,7 +219,7 @@ class GEMService:
         Returns:
             True se o GEM completou
         """
-        # Padrões de IDs gerados pelos GEMs
+        # Padrões primários de IDs gerados pelos GEMs
         completion_patterns = {
             "gem1_mestre_mapeamento": "MAPA-",
             "gem2_diagnosticador_foco": "FOCO-",
@@ -231,7 +231,31 @@ class GEMService:
         }
 
         pattern = completion_patterns.get(gem_id, "")
-        return bool(pattern) and pattern in response
+        if pattern and pattern in response:
+            return True
+
+        # Detecção secundária: padrões de finalização
+        response_lower = response.lower()
+
+        # GEM 1 - Sinais de que completou o mapeamento
+        if gem_id == "gem1_mestre_mapeamento":
+            gem1_completion_signals = [
+                "sua sessão com o mestre do mapeamento está completa",
+                "mapeamento m.a.p.a. completo",
+                "id do mapeamento",
+                "próximo agente" in response_lower and "diagnosticador f.o.c.o" in response_lower
+            ]
+            if any(gem1_completion_signals):
+                return True
+
+            # Verifica se há histórico suficiente para forçar conclusão
+            if gem_id in self.gem_histories:
+                history_length = len([m for m in self.gem_histories[gem_id] if m["role"] == "assistant"])
+                # Se já trocou mais de 8 mensagens e menciona "pronto" ou "avançar", força conclusão
+                if history_length >= 8 and ("pronto para avançar" in response_lower or "está pronto" in response_lower):
+                    return True
+
+        return False
 
     def _extract_gem_output(self, response: str, gem_id: str) -> str:
         """
@@ -316,6 +340,36 @@ Comece se apresentando e iniciando o protocolo."""
             "content": answer
         })
 
+    def _should_force_output_generation(self, gem_id: str, answer: str) -> bool:
+        """
+        Detecta se o GEM está tentando finalizar mas não gerou o output estruturado.
+
+        Args:
+            gem_id: ID do GEM
+            answer: Resposta atual do GEM
+
+        Returns:
+            True se deve forçar a geração do output
+        """
+        if gem_id != "gem1_mestre_mapeamento":
+            return False
+
+        answer_lower = answer.lower()
+
+        # Sinais de que completou as etapas mas não gerou output
+        completion_attempt_signals = [
+            "você está pronto para avançar",
+            "pronto para avançar com a próxima etapa",
+            "está pronto para continuar",
+            "podemos avançar"
+        ]
+
+        has_signal = any(signal in answer_lower for signal in completion_attempt_signals)
+        has_output_id = "MAPA-" in answer
+
+        # Se tem sinal de conclusão mas NÃO tem o ID, precisa forçar
+        return has_signal and not has_output_id
+
     def _finalize_interaction(
         self,
         gem_id: str,
@@ -324,6 +378,37 @@ Comece se apresentando e iniciando o protocolo."""
         force_completion: bool
     ) -> Tuple[str, bool]:
         """Verifica e finaliza um GEM quando necessário."""
+
+        # Verifica se precisa forçar geração do output estruturado
+        if self._should_force_output_generation(gem_id, answer):
+            # Injeta prompt forçando output e regenera resposta
+            self.gem_histories[gem_id].append({
+                "role": "system",
+                "content": """ATENÇÃO: Você completou as etapas do protocolo mas não gerou o OUTPUT ESTRUTURADO OBRIGATÓRIO.
+
+Gere AGORA o formato completo conforme as instruções, incluindo:
+- ════════════════════════════════════════════
+- **MAPEAMENTO M.A.P.A. COMPLETO**
+- Todos os papéis identificados
+- Papel prioritário com análise F.A.S.I.L.
+- Matriz de priorização com scores
+- Oportunidades de amplificação
+- 📋 **ID DO MAPEAMENTO**: MAPA-2025-10-001
+- ════════════════════════════════════════════
+
+Gere este output AGORA e ENCERRE."""
+            })
+
+            # Regenera resposta com o prompt de força
+            messages = self.gem_histories[gem_id]
+            response = self.llm.invoke(messages)
+            answer = getattr(response, "content", str(response)).strip()
+
+            # Atualiza histórico com a nova resposta
+            self.gem_histories[gem_id].append({
+                "role": "assistant",
+                "content": answer
+            })
 
         should_finalize = force_completion or self._is_gem_complete(answer, gem_id)
 
