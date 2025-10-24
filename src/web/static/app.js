@@ -4,9 +4,18 @@ const submitButton = document.querySelector("#submit-button");
 const chatHistory = document.querySelector("#chat-history");
 const emptyState = document.querySelector("#empty-state");
 const statusButton = document.querySelector("#status-button");
-const resetButton = document.querySelector("#reset-button");
 const themeToggle = document.querySelector("#theme-toggle");
 const completeButton = document.querySelector("#complete-button");
+
+// History sidebar elements
+const historyToggle = document.querySelector("#history-toggle");
+const historySidebar = document.querySelector("#history-sidebar");
+const closeSidebar = document.querySelector("#close-sidebar");
+const newChatButton = document.querySelector("#new-chat-button");
+const historyList = document.querySelector("#history-list");
+
+// Current conversation ID
+let currentConversationId = null;
 
 // Function to update the visibility and state of the complete button based on current GEM
 const updateCompleteButton = async () => {
@@ -402,6 +411,12 @@ const sendMessage = async (message, options = {}) => {
       textarea.style.height = 'auto';
     }
 
+    // Save conversation after each message
+    const messages = getCurrentMessages();
+    if (messages.length > 0) {
+      saveConversation(currentConversationId, messages);
+    }
+
     textarea.focus();
   }
 };
@@ -424,37 +439,165 @@ if (completeButton) {
 // Botão de status removido (não mais necessário)
 
 // Handler para botão de reset
-if (resetButton) {
-  resetButton.addEventListener("click", async () => {
-    if (!confirm("Deseja reiniciar sua jornada? O progresso será mantido em backup.")) {
-      return;
-    }
+// ========================================
+// HISTORY SIDEBAR MANAGEMENT
+// ========================================
 
-    setLoading(true);
-    try {
-      const response = await fetch("/api/reset", { method: "POST" });
-      const payload = await response.json();
+// Load conversations list from localStorage
+const loadConversationsList = () => {
+  const conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
+  return conversations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+};
 
-      // Limpa o histórico visual
-      chatHistory.innerHTML = "";
+// Save conversation to localStorage
+const saveConversation = (conversationId, messages) => {
+  const conversations = loadConversationsList();
+  const existingIndex = conversations.findIndex(c => c.id === conversationId);
 
-      const resetMessage = {
-        message: "",
-        answer: payload.message,
-        gem_name: null,
-        is_orchestrator: true,
-        error: "",
-      };
+  const conversationData = {
+    id: conversationId,
+    messages: messages,
+    updatedAt: new Date().toISOString(),
+    title: messages.length > 0 ? messages[0].message.substring(0, 50) : 'Nova Conversa'
+  };
 
-      chatHistory.appendChild(buildMessage(resetMessage));
-      scrollToBottom();
-    } catch (error) {
-      console.error("Erro ao reiniciar:", error);
-    } finally {
-      setLoading(false);
-    }
+  if (existingIndex >= 0) {
+    conversations[existingIndex] = conversationData;
+  } else {
+    conversations.unshift(conversationData);
+  }
+
+  localStorage.setItem('conversations', JSON.stringify(conversations));
+  renderHistoryList();
+};
+
+// Get current conversation messages
+const getCurrentMessages = () => {
+  const messageElements = chatHistory.querySelectorAll('.chat-message');
+  return Array.from(messageElements).map(el => {
+    const question = el.querySelector('.chat-message__question')?.textContent || '';
+    const answer = el.querySelector('.chat-message__answer')?.textContent || '';
+    const gemName = el.querySelector('.chat-message__role')?.textContent || '';
+
+    return { message: question, answer: answer, gem_name: gemName };
+  });
+};
+
+// Load conversation by ID
+const loadConversation = (conversationId) => {
+  const conversations = loadConversationsList();
+  const conversation = conversations.find(c => c.id === conversationId);
+
+  if (conversation) {
+    currentConversationId = conversationId;
+    chatHistory.innerHTML = '';
+
+    conversation.messages.forEach(msg => {
+      chatHistory.appendChild(buildMessage(msg));
+    });
+
+    scrollToBottom();
+    renderHistoryList();
+    toggleSidebar(false);
+  }
+};
+
+// Create new conversation
+const createNewConversation = () => {
+  currentConversationId = 'conv-' + Date.now();
+  chatHistory.innerHTML = '';
+
+  if (emptyState) {
+    chatHistory.appendChild(emptyState);
+  }
+
+  renderHistoryList();
+  toggleSidebar(false);
+};
+
+// Render history list
+const renderHistoryList = () => {
+  const conversations = loadConversationsList();
+
+  if (conversations.length === 0) {
+    historyList.innerHTML = '<div class="history-empty">Nenhuma conversa ainda</div>';
+    return;
+  }
+
+  historyList.innerHTML = conversations.map(conv => {
+    const date = new Date(conv.updatedAt);
+    const formattedDate = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short'
+    });
+    const formattedTime = date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const isActive = conv.id === currentConversationId;
+
+    return `
+      <div class="history-item ${isActive ? 'active' : ''}" data-conversation-id="${conv.id}">
+        <div class="history-item-title">${conv.title}</div>
+        <div class="history-item-meta">
+          <span>${formattedDate}</span>
+          <span>•</span>
+          <span>${formattedTime}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add click handlers
+  historyList.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const convId = item.getAttribute('data-conversation-id');
+      loadConversation(convId);
+    });
+  });
+};
+
+// Toggle sidebar
+const toggleSidebar = (open = null) => {
+  if (open === null) {
+    historySidebar.classList.toggle('open');
+  } else if (open) {
+    historySidebar.classList.add('open');
+  } else {
+    historySidebar.classList.remove('open');
+  }
+};
+
+// Event listeners for history sidebar
+if (historyToggle) {
+  historyToggle.addEventListener('click', () => {
+    toggleSidebar();
   });
 }
+
+if (closeSidebar) {
+  closeSidebar.addEventListener('click', () => {
+    toggleSidebar(false);
+  });
+}
+
+if (newChatButton) {
+  newChatButton.addEventListener('click', createNewConversation);
+}
+
+// Initialize: Create first conversation if none exists
+if (!currentConversationId) {
+  const conversations = loadConversationsList();
+  if (conversations.length > 0) {
+    currentConversationId = conversations[0].id;
+  } else {
+    currentConversationId = 'conv-' + Date.now();
+  }
+}
+
+// Render initial history list
+renderHistoryList();
 
 // Auto-focus no textarea
 textarea.focus();
