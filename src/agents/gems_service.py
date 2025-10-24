@@ -5,7 +5,7 @@ Integra o orquestrador com os agentes GEM especializados.
 
 from dataclasses import dataclass
 from typing import Dict, Generator, Optional, Any, List, Tuple
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from ..config import GEMConfig
 from .orchestrator import GEMOrchestrator
@@ -36,19 +36,32 @@ class GEMService:
 
     def __init__(
         self,
-        llm: Optional[ChatOllama] = None,
+        llm: Optional[ChatOpenAI] = None,
         state_file: str = "user_journey.json"
     ):
         """
         Inicializa o serviço GEMS.
 
         Args:
-            llm: Instância do LLM (padrão: Ollama llama3.2:3b)
+            llm: Instância do LLM (padrão: Qwen via Alibaba Cloud API)
             state_file: Arquivo para persistir estado da jornada
         """
-        # Configuração otimizada do LLM para velocidade máxima
+        # Configuração do LLM Qwen
         llm_config = GEMConfig.get_llm_config()
-        self.llm = llm or ChatOllama(**llm_config)
+
+        if llm:
+            self.llm = llm
+        else:
+            # Cria cliente ChatOpenAI apontando para Qwen API
+            self.llm = ChatOpenAI(
+                model=llm_config["model"],
+                temperature=llm_config["temperature"],
+                max_tokens=llm_config["max_tokens"],
+                timeout=llm_config["timeout"],
+                api_key=llm_config["api_key"],
+                base_url=llm_config["base_url"],
+                streaming=True,  # Habilita streaming
+            )
 
         self.orchestrator = GEMOrchestrator(state_file=state_file)
 
@@ -58,10 +71,10 @@ class GEMService:
         # Dicionário de comandos e seus métodos correspondentes
         self._command_registry = {
             "/concluir": self._handle_completion_command,
-            "/finalizar": self._handle_completion_command, 
+            "/finalizar": self._handle_completion_command,
             "/finalize": self._handle_completion_command,
         }
-        
+
         # Conjunto de comandos de força de conclusão para verificação rápida
         self._force_completion_commands = set(self._command_registry.keys())
 

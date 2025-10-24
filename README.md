@@ -4,19 +4,19 @@
 
 Sistema revolucionário de 7 GEMs (agentes especializados) que transformam a curva de aprendizado através de **aprendizado interativo** guiado por inteligência artificial local.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-brightgreen.svg)
-![Ollama](https://img.shields.io/badge/ollama-llama3.2:3b-orange.svg)
+![Qwen](https://img.shields.io/badge/qwen-max-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## 🌟 Características Principais
 
-- ✅ **100% Gratuito** - Sem APIs pagas, totalmente local
+- ✅ **1M Tokens Grátis** - Alibaba Cloud oferece 1 milhão de tokens gratuitos
 - ✅ **7 GEMs Especializados** - Agentes independentes e autossuficientes
 - ✅ **Interface Web Moderna** - Chat interativo com streaming em tempo real
 - ✅ **Navegação Livre** - Explore qualquer GEM a qualquer momento
 - ✅ **Progresso Visual** - Acompanhe sua jornada com indicadores claros
-- ✅ **LLM Local** - Llama 3.2 (3B) via Ollama, privacidade total
+- ✅ **Qwen API** - Modelo de IA de última geração da Alibaba Cloud
 - ✅ **Performance Otimizada** - Respostas rápidas com streaming SSE
 
 ## 🎯 O que são os GEMs?
@@ -39,18 +39,12 @@ Os 7 GEMs são agentes especializados que trabalham em sequência para criar um 
 
 ## 🚀 Instalação Rápida
 
-### 1. Pré-requisitos
+### 1. Obtenha sua Chave API da Qwen
 
-```bash
-# macOS
-brew install ollama
-brew services start ollama
-ollama pull llama3.2:3b
-
-# Linux
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.2:3b
-```
+1. Acesse: https://modelstudio.console.alibabacloud.com/?tab=model#/api-key
+2. Crie uma conta (se necessário)
+3. Gere sua API Key
+4. **Ganhe 1 milhão de tokens gratuitos!** 🎉
 
 ### 2. Clone e Configure
 
@@ -61,14 +55,24 @@ python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Para desenvolvimento e testes (opcional)
-pip install -r requirements-dev.txt
-
-# Para funcionalidades avançadas (opcional)
-pip install -r requirements-extra.txt
+# Copie o arquivo .env.example e configure sua chave
+cp .env.example .env
+# Edite o .env e adicione sua QWEN_API_KEY
 ```
 
-### 3. Execute a Interface Web
+### 3. Configure o .env
+
+Edite o arquivo `.env` e adicione sua chave:
+
+```bash
+QWEN_API_KEY=sk-sua-chave-aqui
+QWEN_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+LLM_MODEL=qwen-max
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=2048
+```
+
+### 4. Execute a Interface Web
 
 ```bash
 uvicorn src.web.app:app --reload
@@ -140,8 +144,8 @@ A interface web oferece uma experiência moderna e intuitiva:
     ┌─────────────┴─────────────┐
     │                           │
 ┌───▼────┐              ┌───────▼────┐
-│  GEMs  │              │ Ollama LLM │
-│  7     │◄─────────────┤ llama3.2:3b│
+│  GEMs  │              │  Qwen API  │
+│  7     │◄─────────────┤ qwen-max   │
 └────────┘              └────────────┘
 ```
 
@@ -210,30 +214,25 @@ Comandos disponíveis:
 
 ### Ajustar Parâmetros do LLM
 
-Edite `src/agents/gems_service.py`:
-
-```python
-self.llm = ChatOllama(
-    model="llama3.2:3b",
-    temperature=0.4,      # Determinismo (0.0-1.0)
-    num_predict=350,      # Tamanho da resposta
-    num_ctx=1536,         # Tamanho do contexto
-    num_thread=4          # Threads para CPU
-)
-```
-
-### Mudar Modelo do Ollama
+Edite o arquivo `.env`:
 
 ```bash
-# Modelos disponíveis
-ollama list
-
-# Usar modelo diferente
-ollama pull llama3.1:8b
-
-# Atualizar no código
-model="llama3.1:8b"
+# Modelos disponíveis: qwen-max, qwen-plus, qwen-turbo
+LLM_MODEL=qwen-max           # Modelo mais poderoso
+LLM_TEMPERATURE=0.7          # Criatividade (0.0-1.0)
+LLM_MAX_TOKENS=2048          # Tamanho máximo da resposta
+LLM_REQUEST_TIMEOUT=60.0     # Timeout em segundos
 ```
+
+### Modelos Qwen Disponíveis
+
+| Modelo | Descrição | Uso Recomendado |
+|--------|-----------|-----------------|
+| `qwen-max` | Mais poderoso | Tarefas complexas, análises profundas |
+| `qwen-plus` | Balanceado | Uso geral, boa relação custo/performance |
+| `qwen-turbo` | Mais rápido | Respostas rápidas, tarefas simples |
+
+Para mudar o modelo, edite a variável `LLM_MODEL` no `.env`.
 
 ### Personalizar Streaming
 
@@ -294,24 +293,39 @@ Exporta a jornada do usuário em formato Markdown.
 
 ## 🐛 Troubleshooting
 
-### Ollama não está rodando
+### Erro de API Key
 
-```bash
-# macOS
-brew services start ollama
-
-# Linux
-sudo systemctl start ollama
-
-# Verificar
-ollama list
+```
+Error: API key not configured
 ```
 
-### Modelo não encontrado
-
+**Solução:** Verifique se o arquivo `.env` existe e contém a chave:
 ```bash
-ollama pull llama3.2:3b
+cat .env
+# Deve mostrar: QWEN_API_KEY=sk-...
 ```
+
+### Erro de conexão com API
+
+```
+Error: Connection timeout
+```
+
+**Possíveis causas:**
+1. Verifique sua conexão com internet
+2. Confirme que está usando o endpoint correto (internacional vs China)
+3. Verifique se a chave API está ativa no console
+
+### Limite de tokens excedido
+
+```
+Error: Token limit exceeded
+```
+
+**Solução:**
+- Você atingiu o limite de 1M tokens gratuitos
+- Adicione créditos na sua conta Alibaba Cloud
+- Ou reduza `LLM_MAX_TOKENS` no `.env`
 
 ### Porta 8000 em uso
 
@@ -322,18 +336,9 @@ uvicorn src.web.app:app --reload --port 8001
 
 ### Respostas lentas
 
-- **Normal para modelos locais!** (~10-15s)
-- Primeira execução carrega o modelo (mais lento)
-- Respostas subsequentes são mais rápidas
-- Use modelo menor para mais velocidade: `llama3.2:1b`
-
-### Warning sobre PyTorch
-
-```
-None of PyTorch, TensorFlow >= 2.0, or Flax have been found.
-```
-
-**Pode ignorar!** O sistema não usa PyTorch.
+- Verifique sua conexão com internet
+- Use modelo mais rápido: `qwen-turbo` no `.env`
+- Reduza `LLM_MAX_TOKENS` para respostas mais curtas
 
 ## 📈 Performance
 
@@ -350,11 +355,13 @@ None of PyTorch, TensorFlow >= 2.0, or Flax have been found.
 
 | Operação | Tempo Médio |
 |----------|-------------|
-| Primeira resposta | 12-15s |
-| Respostas subsequentes | 8-10s |
-| Streaming (primeira palavra) | ~100ms |
+| Primeira resposta | 2-4s |
+| Respostas subsequentes | 1-3s |
+| Streaming (primeira palavra) | ~200ms |
 | Carregamento da interface | <100ms |
 | Troca entre GEMs | <50ms |
+
+**Nota:** Tempos podem variar dependendo da sua conexão com internet e do modelo escolhido.
 
 ## 🎓 Tecnologias Utilizadas
 
@@ -363,8 +370,8 @@ None of PyTorch, TensorFlow >= 2.0, or Flax have been found.
 | **Python** | 3.11+ | Linguagem base |
 | **FastAPI** | Latest | Framework web |
 | **LangChain** | Latest | Orquestração de LLM |
-| **Ollama** | Latest | Runtime LLM local |
-| **Llama 3.2** | 3B | Modelo de linguagem |
+| **Qwen API** | Latest | API de IA da Alibaba Cloud |
+| **Qwen Max** | Latest | Modelo de linguagem avançado |
 | **JavaScript** | ES6+ | Frontend interativo |
 | **CSS3** | - | Estilização moderna |
 
@@ -403,9 +410,9 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 🙏 Agradecimentos
 
-- Meta AI pelo Llama 3.2
-- Ollama pela infraestrutura local
+- Alibaba Cloud pelo Qwen e 1M tokens gratuitos
 - LangChain pelo framework
+- FastAPI pela performance excepcional
 - Comunidade open source
 
 ## 📧 Contato
@@ -418,4 +425,4 @@ Link do Projeto: [https://github.com/felipeleiteme/sistema-agentes-rag](https://
 
 ⭐ Se este projeto te ajudou, considere dar uma estrela!
 
-**Desenvolvido com ❤️ usando IA local**
+**Desenvolvido com ❤️ usando Qwen API da Alibaba Cloud**
