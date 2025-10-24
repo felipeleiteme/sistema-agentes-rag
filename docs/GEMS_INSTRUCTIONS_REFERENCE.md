@@ -7,6 +7,25 @@ Este documento contém as instruções detalhadas de cada GEM para referência e
 ✅ As instruções estão integradas no sistema através de `src/agents/gems.py`
 ✅ O `gems_service.py` usa essas instruções como system message para o LLM
 ✅ Cada GEM segue rigorosamente seu protocolo específico
+✅ **HISTÓRICO COMPARTILHADO**: GEMs recebem contexto completo dos anteriores para continuidade
+
+## 🔄 Arquitetura de Compartilhamento de Contexto
+
+### Como Funciona
+
+**Quando o usuário inicia o GEM 2 (ou qualquer GEM posterior):**
+
+1. O sistema carrega o **histórico completo do GEM 1**
+2. Injeta no contexto do GEM 2:
+   - ✅ Outputs estruturados (IDs, resultados)
+   - ✅ Principais mensagens do usuário
+   - ✅ Principais descobertas/recomendações
+3. O GEM 2 pode:
+   - ❌ NÃO pedir informações já coletadas
+   - ✅ Personalizar abordagem baseada no perfil revelado
+   - ✅ Manter continuidade emocional e técnica
+
+**Benefício:** Experiência fluida e personalizada sem repetições desnecessárias
 
 ---
 
@@ -133,13 +152,14 @@ Este documento contém as instruções detalhadas de cada GEM para referência e
 
 ## 🎯 Princípios Fundamentais (Todos os GEMs)
 
-1. **NUNCA assumir contexto de sessões anteriores**
-2. **SEMPRE conduzir protocolo completo**
-3. **Linguagem humana, calorosa e empática**
-4. **Rigor no protocolo + flexibilidade no tom**
-5. **Guiar, não julgar**
-6. **Personalização baseada em contexto real**
-7. **Saídas estruturadas com IDs únicos**
+1. **SEMPRE usar contexto de GEMs anteriores da MESMA JORNADA**
+2. **NÃO pedir informações já coletadas por GEMs anteriores**
+3. **Personalizar abordagem com base no perfil e histórico revelado**
+4. **Conduzir protocolo completo mas com continuidade**
+5. **Linguagem humana, calorosa e empática**
+6. **Rigor no protocolo + flexibilidade no tom**
+7. **Guiar, não julgar**
+8. **Saídas estruturadas com IDs únicos**
 
 ---
 
@@ -162,8 +182,21 @@ Este documento contém as instruções detalhadas de cada GEM para referência e
 
 ## ⚠️ Notas de Implementação
 
+### Fluxo Técnico
+
 - As instruções estão em `src/agents/gems.py`
 - O `gems_service.py` injeta como system message no LLM
-- Cada GEM mantém histórico independente
-- Contexto compartilhado é mínimo (apenas IDs e outputs estruturados)
+- Cada GEM salva seu histórico em `orchestrator.save_gem_conversation()`
+- O `orchestrator.get_shared_context()` constrói contexto enriquecido com:
+  - Outputs estruturados dos GEMs anteriores
+  - Resumo das 3 principais mensagens do usuário
+  - Resumo das 3 principais descobertas/recomendações
 - PDFs de referência não devem ser misturados com informações do usuário
+
+### Diferença Importante
+
+**❌ Antes:** Cada GEM era totalmente independente, sem acesso a histórico anterior
+**✅ Agora:** Cada GEM recebe contexto completo da jornada para melhor experiência
+
+**Mantido:** Cada GEM AINDA pode funcionar standalone se necessário (autossuficiência)
+**Novo:** Quando em jornada sequencial, há continuidade e personalização

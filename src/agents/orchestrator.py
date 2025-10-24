@@ -329,29 +329,64 @@ Digite 'status' para revisar seu progresso
 
     def get_shared_context(self) -> str:
         """
-        Constrói contexto compartilhado com informações de GEMs anteriores.
-        Otimizado para ser conciso e rápido.
+        Constrói contexto compartilhado com HISTÓRICO COMPLETO de GEMs anteriores.
+
+        IMPORTANTE: Compartilha conversas completas para continuidade da experiência.
 
         Returns:
-            String com contexto formatado
+            String com contexto formatado incluindo histórico de conversas
         """
         if not self.state.get("completed_gems"):
             return ""
 
-        context_parts = ["**CONTEXTO DA JORNADA:**\n"]
+        context_parts = ["**📚 CONTEXTO DA SUA JORNADA (GEMs anteriores):**\n"]
+        context_parts.append("Use as informações abaixo para personalizar sua abordagem.\n")
 
         for gem_id in self.state["completed_gems"]:
             gem_info = get_gem_info(gem_id)
             gem_output = self.state.get("gem_outputs", {}).get(gem_id, {})
+            gem_conversation = self.state.get("gem_conversations", {}).get(gem_id, [])
 
-            context_parts.append(f"\n**{gem_info['emoji']} {gem_info['name']}:**")
+            context_parts.append(f"\n{'='*70}")
+            context_parts.append(f"**{gem_info['emoji']} {gem_info['name']}:**\n")
 
+            # Inclui o output estruturado
             if "output" in gem_output:
-                # Limita output a 300 caracteres para não sobrecarregar contexto
                 output_text = gem_output['output']
-                if len(output_text) > 300:
-                    output_text = output_text[:300] + "..."
-                context_parts.append(f"{output_text}")
+                context_parts.append(f"**Resultado:**\n{output_text}\n")
+
+            # Inclui resumo do histórico de conversa (apenas mensagens do usuário e assistente)
+            if gem_conversation:
+                context_parts.append("**Principais pontos da conversa:**")
+                user_messages = []
+                assistant_messages = []
+
+                for msg in gem_conversation:
+                    if msg.get("role") == "user":
+                        content = msg.get("content", "")
+                        if len(content) > 200:
+                            content = content[:200] + "..."
+                        user_messages.append(f"  - {content}")
+                    elif msg.get("role") == "assistant":
+                        content = msg.get("content", "")
+                        if len(content) > 300:
+                            content = content[:300] + "..."
+                        assistant_messages.append(f"  - {content}")
+
+                # Limita a 3 interações mais relevantes para não sobrecarregar
+                if user_messages:
+                    context_parts.append("\nO que o usuário compartilhou:")
+                    context_parts.extend(user_messages[:3])
+
+                if assistant_messages:
+                    context_parts.append("\nPrincipais descobertas/recomendações:")
+                    context_parts.extend(assistant_messages[:3])
+
+        context_parts.append(f"\n{'='*70}\n")
+        context_parts.append("**💡 IMPORTANTE:**")
+        context_parts.append("- Use essas informações para NÃO pedir dados que já foram coletados")
+        context_parts.append("- Personalize sua abordagem com base no perfil e contexto revelado")
+        context_parts.append("- Mantenha continuidade emocional e técnica com a jornada anterior\n")
 
         return "\n".join(context_parts)
 
