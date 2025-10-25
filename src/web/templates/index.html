@@ -84,6 +84,13 @@
   </svg>
 </button>
 
+<!-- Logout Button -->
+<button class="logout-button" id="logout-button" title="Sair" style="display: none;">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
 <!-- History Sidebar -->
 <div class="history-sidebar" id="history-sidebar">
   <div class="history-header">
@@ -114,5 +121,57 @@
   </svg>
 </button>
 
+<script src="{{ url_for('static', path='auth.js') }}" type="module"></script>
+<script src="{{ url_for('static', path='conversations.js') }}" type="module"></script>
 <script src="{{ url_for('static', path='app.js') }}" type="module"></script>
+
+<style>
+.logout-button {
+  position: fixed;
+  top: 1.5rem;
+  right: 5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.1);
+}
+
+.logout-button svg {
+  color: currentColor;
+}
+</style>
+
+<script>
+// Verificar autenticação ao carregar página
+window.addEventListener('DOMContentLoaded', async () => {
+  const auth = window.authManager;
+  const user = await auth.checkAuth();
+
+  if (user) {
+    // Mostrar botão de logout
+    const logoutBtn = document.getElementById('logout-button');
+    if (logoutBtn) {
+      logoutBtn.style.display = 'flex';
+      logoutBtn.addEventListener('click', () => {
+        if (confirm('Deseja realmente sair?')) {
+          auth.logout();
+        }
+      });
+    }
+  }
+});
+</script>
 {% endblock %}

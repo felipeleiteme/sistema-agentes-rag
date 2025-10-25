@@ -48,7 +48,6 @@ body {
 /* Main Container */
 .main {
   flex: 1;
-  display: flex;
   width: 100%;
   padding: 0;
 }
@@ -1588,4 +1587,63 @@ body:has(.gems-sidebar:not(.gems-sidebar--collapsed)) .container {
   .btn {
     width: 100%;
   }
+}
+
+/* ===== CONVERSATION ITEMS ===== */
+.conversation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.conversation-item:hover {
+  background: var(--bg-input);
+  border-color: var(--accent);
+}
+
+.conversation-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-title {
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.conversation-delete {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.conversation-delete:hover {
+  background: var(--bg-input);
+  color: #ef4444;
 }

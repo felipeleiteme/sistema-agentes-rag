@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-container">
+    <!-- Logo e Header -->
+    <div class="auth-header">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">💎</div>
+      </div>
+      <h1 class="auth-title">SAC Learning GEMS</h1>
+      <p class="auth-subtitle">Faça login para continuar sua jornada</p>
+    </div>
+
+    <!-- Formulário de Login -->
+    <form class="auth-form" id="login-form">
+      <div class="form-group">
+        <label for="email" class="form-label">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-input"
+          placeholder="seu@email.com"
+          required
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Senha</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input"
+          placeholder="••••••••"
+          required
+          autocomplete="current-password"
+          minlength="6"
+        />
+      </div>
+
+      <div class="form-error" id="error-message" style="display: none;"></div>
+
+      <button type="submit" class="auth-button" id="submit-button">
+        <span class="button-text">Entrar</span>
+        <span class="button-loader" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+        </span>
+      </button>
+    </form>
+
+    <!-- Divisor OU -->
+    <div class="auth-divider">
+      <span>OU</span>
+    </div>
+
+    <!-- Botão Google -->
+    <button class="google-button" id="google-login-button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continuar com Google
+    </button>
+
+    <!-- Link para Registro -->
+    <div class="auth-footer">
+      <p class="auth-footer-text">
+        Não tem uma conta?
+        <a href="/register" class="auth-link">Criar conta</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+.auth-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-logo {
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo-icon {
+  font-size: 4rem;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.auth-title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.auth-form {
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-error {
+  padding: 0.875rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.auth-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.auth-button:active {
+  transform: translateY(0);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-footer {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.auth-footer-text {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.auth-link {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-divider span {
+  padding: 0 1rem;
+}
+
+.google-button {
+  width: 100%;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.google-button:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.google-button:active {
+  transform: translateY(0);
+}
+</style>
+
+<script>
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const submitButton = document.getElementById('submit-button');
+  const errorMessage = document.getElementById('error-message');
+  const buttonText = submitButton.querySelector('.button-text');
+  const buttonLoader = submitButton.querySelector('.button-loader');
+
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  // Reset error
+  errorMessage.style.display = 'none';
+
+  // Show loading
+  submitButton.disabled = true;
+  buttonText.style.display = 'none';
+  buttonLoader.style.display = 'block';
+
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // Salvar tokens no localStorage
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      localStorage.setItem('user_email', data.email);
+      localStorage.setItem('user_id', data.user_id);
+
+      // Redirecionar para home
+      window.location.href = '/';
+    } else {
+      errorMessage.textContent = data.error || 'Erro ao fazer login';
+      errorMessage.style.display = 'block';
+    }
+  } catch (error) {
+    errorMessage.textContent = 'Erro de conexão. Tente novamente.';
+    errorMessage.style.display = 'block';
+  } finally {
+    submitButton.disabled = false;
+    buttonText.style.display = 'block';
+    buttonLoader.style.display = 'none';
+  }
+});
+
+// Login com Google
+document.getElementById('google-login-button').addEventListener('click', async () => {
+  try {
+    const response = await fetch('/api/auth/google');
+    const data = await response.json();
+
+    if (data.success && data.url) {
+      // Redirecionar para página de autenticação do Google
+      window.location.href = data.url;
+    } else {
+      alert('Erro ao iniciar login com Google');
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    alert('Erro de conexão. Tente novamente.');
+  }
+});
+</script>
+{% endblock %}

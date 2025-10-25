@@ -1,7 +1,8 @@
-"""Testes para os novos endpoints da API web do sistema SAC Learning GEMS."""
-import json
-from fastapi.testclient import TestClient
+"""Testes para os endpoints auxiliares da API web."""
+
 from unittest.mock import MagicMock
+
+from fastapi.testclient import TestClient
 
 from src.web.app import create_app, get_gem_service
 from src.agents import GEMService
@@ -9,19 +10,20 @@ from src.agents import GEMService
 
 def test_history_endpoint():
     """Testa o endpoint /api/history."""
+    get_gem_service.cache_clear()
     app = create_app()
     client = TestClient(app)
-    
+
     # Mock do GEMService
     mock_service = MagicMock(spec=GEMService)
     mock_service.orchestrator.state = {
-        "current_gem": "gem1_mapeamento",
-        "completed_gems": ["gem0_inicializacao"],
+        "current_gem": "gem2_diagnosticador_foco",
+        "completed_gems": ["gem1_mestre_mapeamento"],
         "gem_outputs": {
-            "gem0_inicializacao": {"output": "output-teste"}
+            "gem1_mestre_mapeamento": {"output": "MAPA-2025-10-001"}
         },
         "gem_conversations": {
-            "gem0_inicializacao": [
+            "gem1_mestre_mapeamento": [
                 {"role": "user", "content": "mensagem do usuário"},
                 {"role": "assistant", "content": "resposta do assistente"}
             ]
@@ -30,15 +32,16 @@ def test_history_endpoint():
         "last_updated": "2024-01-01T01:00:00"
     }
     mock_service.gem_histories = {
-        "gem1_mapeamento": [
+        "gem2_diagnosticador_foco": [
             {"role": "system", "content": "instruções do sistema"},
             {"role": "user", "content": "mensagem atual"}
         ]
     }
-    
+    mock_service.orchestrator.get_current_gem.return_value = "gem2_diagnosticador_foco"
+
     # Substitui a dependência
     app.dependency_overrides[get_gem_service] = lambda: mock_service
-    
+
     response = client.get("/api/history")
     
     assert response.status_code == 200
@@ -47,28 +50,29 @@ def test_history_endpoint():
     assert "conversations" in data
     assert "active_history" in data
     assert "completed_gems" in data
-    assert data["current_gem"] == "gem1_mapeamento"
-    assert data["completed_gems"] == ["gem0_inicializacao"]
+    assert data["current_gem"] == "gem2_diagnosticador_foco"
+    assert data["completed_gems"] == ["gem1_mestre_mapeamento"]
 
 
 def test_export_endpoint():
     """Testa o endpoint /api/export."""
+    get_gem_service.cache_clear()
     app = create_app()
     client = TestClient(app)
-    
+
     # Mock do GEMService
     mock_service = MagicMock(spec=GEMService)
     mock_service.orchestrator.state = {
-        "current_gem": "gem1_mapeamento",
-        "completed_gems": ["gem0_inicializacao"],
+        "current_gem": "gem2_diagnosticador_foco",
+        "completed_gems": ["gem1_mestre_mapeamento"],
         "gem_outputs": {
-            "gem0_inicializacao": {
+            "gem1_mestre_mapeamento": {
                 "output": "MAPA-2025-10-001",
                 "completed_at": "2024-01-01T00:00:00"
             }
         },
         "gem_conversations": {
-            "gem0_inicializacao": [
+            "gem1_mestre_mapeamento": [
                 {"role": "system", "content": "instruções"},
                 {"role": "user", "content": "mensagem do usuário"},
                 {"role": "assistant", "content": "resposta do assistente"}
@@ -77,7 +81,8 @@ def test_export_endpoint():
         "started_at": "2024-01-01T00:00:00",
         "last_updated": "2024-01-01T01:00:00"
     }
-    
+    mock_service.orchestrator.get_current_gem.return_value = "gem2_diagnosticador_foco"
+
     # Substitui a dependência
     app.dependency_overrides[get_gem_service] = lambda: mock_service
     
@@ -87,11 +92,12 @@ def test_export_endpoint():
     assert response.headers["content-type"] == "text/markdown"
     assert "Jornada SAC Learning GEMS" in response.text
     assert "MAPA-2025-10-001" in response.text
-    assert "Mestre do Mapeamento" in response.text  # Assuming this is a default GEM name
+    assert "Mestre do Mapeamento" in response.text
 
 
 def test_history_endpoint_with_empty_state():
     """Testa o endpoint /api/history com estado vazio."""
+    get_gem_service.cache_clear()
     app = create_app()
     client = TestClient(app)
     
@@ -122,19 +128,21 @@ def test_history_endpoint_with_empty_state():
 
 def test_export_endpoint_no_completed_gems():
     """Testa o endpoint /api/export quando nenhum GEM foi completado."""
+    get_gem_service.cache_clear()
     app = create_app()
     client = TestClient(app)
     
     # Mock do GEMService
     mock_service = MagicMock(spec=GEMService)
     mock_service.orchestrator.state = {
-        "current_gem": "gem1_mapeamento",
+        "current_gem": "gem1_mestre_mapeamento",
         "completed_gems": [],
         "gem_outputs": {},
         "gem_conversations": {},
         "started_at": "2024-01-01T00:00:00",
         "last_updated": "2024-01-01T01:00:00"
     }
+    mock_service.orchestrator.get_current_gem.return_value = "gem1_mestre_mapeamento"
     
     # Substitui a dependência
     app.dependency_overrides[get_gem_service] = lambda: mock_service

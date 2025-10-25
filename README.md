@@ -179,7 +179,6 @@ sistema-agentes-rag/
 ├── sac_gems.py                  # CLI interativo
 ├── requirements.txt               # Dependências principais
 ├── requirements-dev.txt           # Dependências de desenvolvimento
-├── requirements-extra.txt         # Dependências opcionais
 └── README.md                    # Este arquivo
 ```
 

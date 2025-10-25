@@ -165,7 +165,7 @@ Digite 'listar' para ver todos os GEMs disponíveis
         gem_info = get_gem_info(GEMS_SEQUENCE[0])
 
         message = f"""
-🚀 **JORNADA INICIADA!**
+🚀 JORNADA INICIADA!
 
 Bem-vindo ao primeiro GEM da sua jornada de transformação:
 
